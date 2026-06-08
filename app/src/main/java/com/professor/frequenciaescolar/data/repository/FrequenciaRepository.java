@@ -250,6 +250,22 @@ public class FrequenciaRepository {
         });
     }
 
+    // ==================== MÉTODOS ADICIONAIS PARA CHAMADA ====================
+
+    public void updatePresenca(Presenca presenca, Runnable onSuccess) {
+        executorService.execute(() -> {
+            database.presencaDao().update(presenca);
+            if (onSuccess != null) onSuccess.run();
+        });
+    }
+
+    public void getPresencaByChamadaAndAluno(long chamadaId, long alunoId, OnDataFetched<Presenca> callback) {
+        executorService.execute(() -> {
+            Presenca presenca = database.presencaDao().getPresencaByChamadaAndAluno(chamadaId, alunoId);
+            if (callback != null) callback.onDataFetched(presenca);
+        });
+    }
+
     // ==================== CALLBACK INTERFACE ====================
 
     public interface OnDataFetched<T> {

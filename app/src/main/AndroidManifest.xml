@@ -52,6 +52,9 @@
         <activity
             android:name=".ui.alunos.MatriculaActivity"
             android:exported="false" />
+        <!-- Tela de Chamada para registro de frequência -->
+        <activity
+            android:name=".ui.chamada.ChamadaActivity" />
 
     </application>
 
