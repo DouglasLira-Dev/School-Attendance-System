@@ -2,6 +2,7 @@ package com.professor.frequenciaescolar.ui.alunos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
@@ -18,6 +19,7 @@ import com.professor.frequenciaescolar.data.entities.Matricula;
 import com.professor.frequenciaescolar.data.entities.Presenca;
 import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
+import com.professor.frequenciaescolar.ui.relatorios.RelatorioAlunoActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,6 +76,26 @@ public class AlunoDetalheActivity extends AppCompatActivity {
 
         btnEditar.setOnClickListener(v -> editarAluno());
         btnExcluir.setOnClickListener(v -> confirmarExclusao());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_aluno_detalhe, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_relatorio) {
+            Intent intent = new Intent(this, RelatorioAlunoActivity.class);
+            intent.putExtra("aluno_id", alunoId);
+            startActivity(intent);
+            return true;
+        } else if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void carregarDadosAluno() {
@@ -215,14 +237,5 @@ public class AlunoDetalheActivity extends AppCompatActivity {
         if (alunoId != -1) {
             carregarDadosAluno();
         }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }

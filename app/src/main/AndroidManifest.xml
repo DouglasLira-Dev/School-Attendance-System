@@ -91,6 +91,11 @@
             android:name=".ui.configuracoes.ConfiguracoesActivity"
             android:exported="false" />
 
+        <!-- Tela de Relatório por Aluno -->
+        <activity
+            android:name=".ui.relatorios.RelatorioAlunoActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
