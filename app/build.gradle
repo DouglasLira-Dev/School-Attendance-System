@@ -34,15 +34,21 @@ android {
 }
 
 dependencies {
+    // AndroidX
     implementation libs.activity.ktx
     implementation libs.appcompat
     implementation libs.constraintlayout
     implementation libs.material
-    testImplementation libs.junit
-    androidTestImplementation libs.espresso.core
-    androidTestImplementation libs.ext.junit
+
+    // Biometria
+    implementation 'androidx.biometric:biometric:1.2.0-alpha05'
 
     // Room Database
     implementation "androidx.room:room-runtime:2.6.1"
     annotationProcessor "androidx.room:room-compiler:2.6.1"
+
+    // Testes
+    testImplementation libs.junit
+    androidTestImplementation libs.espresso.core
+    androidTestImplementation libs.ext.junit
 }
