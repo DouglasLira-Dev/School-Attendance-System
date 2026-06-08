@@ -12,6 +12,10 @@
     <!-- Permissão para biometria (FaceID/impressão digital) -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
+    <!-- Permissão para notificações -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -60,6 +64,11 @@
         <!-- Tela de Relatórios e Estatísticas -->
         <activity
             android:name=".ui.relatorios.RelatorioDashboardActivity" />
+
+        <!-- Receptor para notificações agendadas -->
+        <receiver
+            android:name=".utils.NotificationReceiver"
+            android:exported="false" />
 
     </application>
 

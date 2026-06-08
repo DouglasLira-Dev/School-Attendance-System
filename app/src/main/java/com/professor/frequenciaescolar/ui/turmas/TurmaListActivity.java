@@ -12,12 +12,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.professor.frequenciaescolar.R;
-import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
-
-import java.util.List;
+import com.professor.frequenciaescolar.utils.NotificationHelper;
+import com.professor.frequenciaescolar.utils.NotificationScheduler;
 
 public class TurmaListActivity extends AppCompatActivity {
 
@@ -56,6 +55,11 @@ public class TurmaListActivity extends AppCompatActivity {
 
         // Carregar turmas
         carregarTurmas();
+
+        // Inicializar notificações
+        NotificationHelper notificationHelper = new NotificationHelper(this);
+        NotificationScheduler.agendarLembreteChamada(this);
+        NotificationScheduler.agendarVerificacaoDiaria(this);
     }
 
     @Override
