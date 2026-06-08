@@ -5,13 +5,16 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.professor.frequenciaescolar.R;
+import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.ui.alunos.AlunoListActivity;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
@@ -31,20 +34,17 @@ public class TurmaListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_turma_list);
 
-        // Configurar toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Inicializar views
         rvTurmas = findViewById(R.id.rvTurmas);
         tvEmpty = findViewById(R.id.tvEmpty);
 
-        // Configurar RecyclerView
         adapter = new TurmaAdapter();
         rvTurmas.setLayoutManager(new LinearLayoutManager(this));
         rvTurmas.setAdapter(adapter);
 
-        // Configurar clique no item - vai para lista de alunos
+        // Clique normal - abrir lista de alunos
         adapter.setOnItemClickListener(turma -> {
             Intent intent = new Intent(TurmaListActivity.this, AlunoListActivity.class);
             intent.putExtra("turma_id", turma.getId());
@@ -52,21 +52,27 @@ public class TurmaListActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Configurar clique longo - editar turma
+        // Clique longo - mostrar opções (Editar/Excluir)
         adapter.setOnItemLongClickListener(turma -> {
-            Intent intent = new Intent(TurmaListActivity.this, TurmaFormActivity.class);
-            intent.putExtra("turma_id", turma.getId());
-            startActivity(intent);
-            // Sem return - o método é void
+            String[] opcoes = {"Editar Turma", "Excluir Turma"};
+            new AlertDialog.Builder(this)
+                    .setTitle(turma.getNome())
+                    .setItems(opcoes, (dialog, which) -> {
+                        if (which == 0) {
+                            Intent intent = new Intent(TurmaListActivity.this, TurmaFormActivity.class);
+                            intent.putExtra("turma_id", turma.getId());
+                            startActivity(intent);
+                        } else if (which == 1) {
+                            confirmarExclusaoTurma(turma);
+                        }
+                    })
+                    .show();
+            // Não tem return aqui - o método é void
         });
 
-        // Inicializar repository
         repository = FrequenciaRepository.getInstance(this);
-
-        // Carregar turmas
         carregarTurmas();
 
-        // Inicializar notificações
         NotificationHelper notificationHelper = new NotificationHelper(this);
         NotificationScheduler.agendarLembreteChamada(this);
         NotificationScheduler.agendarVerificacaoDiaria(this);
@@ -92,6 +98,27 @@ public class TurmaListActivity extends AppCompatActivity {
             });
         });
     }
+
+    // ==================== MÉTODO DE EXCLUSÃO ====================
+
+    private void confirmarExclusaoTurma(Turma turma) {
+        new AlertDialog.Builder(this)
+                .setTitle("Excluir Turma")
+                .setMessage("Tem certeza que deseja excluir a turma " + turma.getNome() + "?\n\n" +
+                        "Esta ação irá desativar a turma. Alunos matriculados serão afetados.")
+                .setPositiveButton("Excluir", (dialog, which) -> {
+                    repository.desativarTurma(turma.getId(), () -> {
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Turma excluída com sucesso!", Toast.LENGTH_SHORT).show();
+                            carregarTurmas();
+                        });
+                    });
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    // ==================== MENU ====================
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

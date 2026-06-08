@@ -61,6 +61,11 @@
             android:name=".ui.alunos.AlunoFormActivity"
             android:exported="false" />
 
+        <!-- Tela de Detalhes do Aluno -->
+        <activity
+            android:name=".ui.alunos.AlunoDetalheActivity"
+            android:exported="false" />
+
         <!-- Tela de Matrícula/Transferência/Expulsão -->
         <activity
             android:name=".ui.alunos.MatriculaActivity"

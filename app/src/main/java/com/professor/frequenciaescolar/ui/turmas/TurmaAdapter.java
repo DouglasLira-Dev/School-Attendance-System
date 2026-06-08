@@ -42,12 +42,12 @@ public class TurmaAdapter extends RecyclerView.Adapter<TurmaAdapter.TurmaViewHol
             }
         });
 
-        // Clique longo (segurar) - editar turma
+        // Clique longo - abrir menu de opções
         holder.itemView.setOnLongClickListener(v -> {
             if (longClickListener != null) {
                 longClickListener.onItemLongClick(turma);
             }
-            return true; // Retorna true para indicar que o evento foi consumido
+            return true; // Consome o evento (não propaga)
         });
     }
 
@@ -74,9 +74,9 @@ public class TurmaAdapter extends RecyclerView.Adapter<TurmaAdapter.TurmaViewHol
         void onItemClick(Turma turma);
     }
 
-    // Interface para clique longo
+    // Interface para clique longo (sem retorno - void)
     public interface OnItemLongClickListener {
-        void onItemLongClick(Turma turma);
+        void onItemLongClick(Turma turma);  // void, sem return
     }
 
     static class TurmaViewHolder extends RecyclerView.ViewHolder {

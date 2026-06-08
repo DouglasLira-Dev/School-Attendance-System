@@ -61,9 +61,9 @@ public class AlunoListActivity extends AppCompatActivity {
 
         repository = FrequenciaRepository.getInstance(this);
 
-        // Configurar clique no aluno
+        // Configurar clique no aluno - vai para tela de detalhes
         adapter.setOnItemClickListener(aluno -> {
-            Intent intent = new Intent(AlunoListActivity.this, MatriculaActivity.class);
+            Intent intent = new Intent(AlunoListActivity.this, AlunoDetalheActivity.class);
             intent.putExtra("aluno_id", aluno.getId());
             startActivity(intent);
         });
