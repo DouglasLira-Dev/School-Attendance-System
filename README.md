@@ -11,6 +11,9 @@ Sistema de controle de frequência escolar para uso do professor, totalmente off
 ## Funcionalidades (implementadas)
 - ✅ Estrutura do banco de dados com Room
 - ✅ Entidades: Turma, Aluno, Matricula, Chamada, Presenca, MovimentacaoAluno
+- ✅ DAOs (interfaces de acesso a dados) para todas as entidades
+- ✅ AppDatabase (configuração principal do Room com Singleton)
+- ✅ Repository (camada de acesso a dados com callbacks)
 
 ## Funcionalidades (planejadas)
 - 🔜 CRUD de Turmas
@@ -28,10 +31,12 @@ Sistema de controle de frequência escolar para uso do professor, totalmente off
 4. Clique em Run (▶️)
 
 ## Versão Atual
-`v0.2.0` - Entidades do banco de dados criadas
+`v0.4.0` - AppDatabase e Repository configurados
 
 ## Histórico de Versões
 | Versão | Data | Descrição |
 |--------|------|-----------|
 | v0.1.0 | 08/06/2026 | Configuração inicial do projeto |
 | v0.2.0 | 08/06/2026 | Criação das entidades Room |
+| v0.3.0 | 08/06/2026 | Criação dos DAOs (interfaces de acesso) |
+| v0.4.0 | 08/06/2026 | AppDatabase e Repository |
