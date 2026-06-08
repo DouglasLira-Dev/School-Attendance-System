@@ -182,13 +182,13 @@ public class RelatorioAlunoActivity extends AppCompatActivity {
 
                         if (p.isPresente()) {
                             presencas[0]++;
-                            historico.add(new HistoricoAdapter.ItemHistorico(c.getData(), c.getHorario(), true, false, ""));
+                            historico.add(new HistoricoAdapter.ItemHistorico(c.getData(), c.getHorarioRegistro(), true, false, ""));
                         } else if (isJustificada) {
                             faltasJustificadas[0]++;
-                            historico.add(new HistoricoAdapter.ItemHistorico(c.getData(), c.getHorario(), false, true, p.getJustificativa()));
+                            historico.add(new HistoricoAdapter.ItemHistorico(c.getData(), c.getHorarioRegistro(), false, true, p.getJustificativa()));
                         } else {
                             faltasNaoJustificadas[0]++;
-                            historico.add(new HistoricoAdapter.ItemHistorico(c.getData(), c.getHorario(), false, false, ""));
+                            historico.add(new HistoricoAdapter.ItemHistorico(c.getData(), c.getHorarioRegistro(), false, false, ""));
                         }
                         break;
                     }
