@@ -1,10 +1,15 @@
 # 📝 Changelog
 
-## [v0.1.0] - 2026-06-08
+Todas as mudanças notáveis neste projeto serão documentadas aqui.
+
+## [v0.2.0] - 2026-06-08
 
 ### Adicionado
-- Estrutura inicial do projeto Android
-- Gradle configurado com Room e Java 17
-- AndroidManifest.xml com permissões de localização, notificações e biometria
-- MainActivity e layout básico
-- README.md e CHANGELOG.md
+- Entidade `Turma` (com anotações Room)
+- Entidade `Aluno` (com anotações Room)
+- Entidade `Matricula` (relação aluno-turma)
+- Entidade `Chamada` (com geolocalização)
+- Entidade `Presenca` (com justificativa de falta)
+- Entidade `MovimentacaoAluno` (transferência e expulsão)
+
+### Estrutura de pastas
