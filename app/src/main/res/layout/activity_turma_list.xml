@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="Turmas"
+        app:titleTextColor="@android:color/white" />
+
+    <!-- RecyclerView para lista de turmas -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTurmas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp" />
+
+    <!-- TextView para quando não houver turmas -->
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nenhuma turma cadastrada.\nClique no + para adicionar"
+        android:textAlignment="center"
+        android:textSize="16sp"
+        android:visibility="gone"
+        android:layout_gravity="center" />
+
+</LinearLayout>
