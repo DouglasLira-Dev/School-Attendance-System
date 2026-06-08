@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="Configurações"
+        app:titleTextColor="@android:color/white" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Seção: Dias Letivos -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Dias Letivos"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Selecione os dias que têm aula:"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="7">
+
+                        <CheckBox
+                            android:id="@+id/chkDomingo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Dom"
+                            android:textSize="12sp" />
+
+                        <CheckBox
+                            android:id="@+id/chkSegunda"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Seg"
+                            android:textSize="12sp" />
+
+                        <CheckBox
+                            android:id="@+id/chkTerca"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Ter"
+                            android:textSize="12sp" />
+
+                        <CheckBox
+                            android:id="@+id/chkQuarta"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Qua"
+                            android:textSize="12sp" />
+
+                        <CheckBox
+                            android:id="@+id/chkQuinta"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Qui"
+                            android:textSize="12sp" />
+
+                        <CheckBox
+                            android:id="@+id/chkSexta"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Sex"
+                            android:textSize="12sp" />
+
+                        <CheckBox
+                            android:id="@+id/chkSabado"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Sáb"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Seção: Período Letivo -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Período Letivo"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Data de Início"
+                        app:startIconDrawable="@android:drawable/ic_menu_today">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDataInicio"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:cursorVisible="false"
+                            android:inputType="date" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Data de Término"
+                        app:startIconDrawable="@android:drawable/ic_menu_today">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDataFim"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:cursorVisible="false"
+                            android:inputType="date" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Seção: Configurações de Chamada -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Configurações de Chamada"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Horário do Lembrete (ex: 07:30)">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etHorarioLembrete"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="time" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <CheckBox
+                        android:id="@+id/chkDesconsiderarJustificadas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Desconsiderar faltas justificadas no cálculo do percentual"
+                        android:checked="true" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Botões -->
+            <Button
+                android:id="@+id/btnSalvar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Salvar Configurações"
+                android:backgroundTint="?attr/colorPrimary" />
+
+            <Button
+                android:id="@+id/btnFeriados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Gerenciar Feriados"
+                android:backgroundTint="@android:color/holo_orange_dark"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

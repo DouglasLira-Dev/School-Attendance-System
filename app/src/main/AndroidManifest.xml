@@ -86,6 +86,11 @@
             android:name=".utils.NotificationReceiver"
             android:exported="false" />
 
+        <!-- Tela de Configurações -->
+        <activity
+            android:name=".ui.configuracoes.ConfiguracoesActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

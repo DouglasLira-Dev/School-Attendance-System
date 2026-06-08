@@ -18,6 +18,7 @@ import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.ui.alunos.AlunoListActivity;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
+import com.professor.frequenciaescolar.ui.configuracoes.ConfiguracoesActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
 import com.professor.frequenciaescolar.utils.NotificationHelper;
 import com.professor.frequenciaescolar.utils.NotificationScheduler;
@@ -139,6 +140,10 @@ public class TurmaListActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.action_chamada) {
             Intent intent = new Intent(this, ChamadaActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_configuracoes) {
+            Intent intent = new Intent(this, ConfiguracoesActivity.class);
             startActivity(intent);
             return true;
         }
