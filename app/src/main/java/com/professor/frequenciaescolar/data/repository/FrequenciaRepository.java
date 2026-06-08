@@ -252,9 +252,14 @@ public class FrequenciaRepository {
 
     // ==================== MÉTODOS ADICIONAIS PARA CHAMADA ====================
 
-    public void updatePresenca(Presenca presenca, Runnable onSuccess) {
+    public void updatePresencaByChamadaAndAluno(long chamadaId, long alunoId, boolean presente, String justificativa, Runnable onSuccess) {
         executorService.execute(() -> {
-            database.presencaDao().update(presenca);
+            Presenca presenca = database.presencaDao().getPresencaByChamadaAndAluno(chamadaId, alunoId);
+            if (presenca != null) {
+                presenca.setPresente(presente);
+                presenca.setJustificativa(justificativa != null ? justificativa : "");
+                database.presencaDao().update(presenca);
+            }
             if (onSuccess != null) onSuccess.run();
         });
     }

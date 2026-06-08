@@ -3,7 +3,6 @@ package com.professor.frequenciaescolar.ui.chamada;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -16,7 +15,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -40,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ChamadaActivity extends AppCompatActivity {
 
@@ -135,6 +134,7 @@ public class ChamadaActivity extends AppCompatActivity {
                             rvAlunos.setVisibility(View.GONE);
                             tvEmpty.setVisibility(View.VISIBLE);
                             tvEmpty.setText("Selecione uma turma");
+                            adapter.setAlunos(new ArrayList<>());
                         }
                     }
 
@@ -152,26 +152,39 @@ public class ChamadaActivity extends AppCompatActivity {
                     rvAlunos.setVisibility(View.GONE);
                     tvEmpty.setVisibility(View.VISIBLE);
                     tvEmpty.setText("Nenhum aluno matriculado nesta turma");
+                    adapter.setAlunos(new ArrayList<>());
                     return;
                 }
 
                 alunos.clear();
+                List<Aluno> alunosTemp = new ArrayList<>();
+                AtomicInteger contador = new AtomicInteger(0);
+                int total = matriculas.size();
+
                 for (Matricula m : matriculas) {
                     repository.getAlunoById(m.getAlunoId(), aluno -> {
-                        if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                            alunos.add(aluno);
-                            adapter.setAlunos(new ArrayList<>(alunos));
-                        }
-                    });
-                }
+                        runOnUiThread(() -> {
+                            if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                                alunosTemp.add(aluno);
+                            }
+                            contador.incrementAndGet();
 
-                if (alunos.isEmpty()) {
-                    rvAlunos.setVisibility(View.GONE);
-                    tvEmpty.setVisibility(View.VISIBLE);
-                    tvEmpty.setText("Nenhum aluno ativo nesta turma");
-                } else {
-                    rvAlunos.setVisibility(View.VISIBLE);
-                    tvEmpty.setVisibility(View.GONE);
+                            if (contador.get() == total) {
+                                alunos.clear();
+                                alunos.addAll(alunosTemp);
+                                adapter.setAlunos(new ArrayList<>(alunos));
+
+                                if (alunos.isEmpty()) {
+                                    rvAlunos.setVisibility(View.GONE);
+                                    tvEmpty.setVisibility(View.VISIBLE);
+                                    tvEmpty.setText("Nenhum aluno ativo nesta turma");
+                                } else {
+                                    rvAlunos.setVisibility(View.VISIBLE);
+                                    tvEmpty.setVisibility(View.GONE);
+                                }
+                            }
+                        });
+                    });
                 }
             });
         });
@@ -247,6 +260,7 @@ public class ChamadaActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     LOCATION_PERMISSION_REQUEST);
+            // Chamar novamente após permissão
             return;
         }
 
@@ -271,13 +285,7 @@ public class ChamadaActivity extends AppCompatActivity {
                     Boolean presente = presencas.get(aluno.getId());
                     if (presente != null) {
                         String justificativa = justificativas.get(aluno.getId());
-                        repository.getPresencaByChamadaAndAluno(chamadaExistente.getId(), aluno.getId(), presenca -> {
-                            if (presenca != null) {
-                                presenca.setPresente(presente);
-                                presenca.setJustificativa(justificativa != null ? justificativa : "");
-                                repository.updatePresenca(presenca, null);
-                            }
-                        });
+                        repository.updatePresencaByChamadaAndAluno(chamadaExistente.getId(), aluno.getId(), presente, justificativa, null);
                     }
                 }
                 runOnUiThread(() -> {
@@ -308,17 +316,25 @@ public class ChamadaActivity extends AppCompatActivity {
 
     private void obterLocalizacao() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (location != null) {
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-            } else {
-                // Usar localização aproximada
-                Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                if (networkLocation != null) {
-                    latitude = networkLocation.getLatitude();
-                    longitude = networkLocation.getLongitude();
+            try {
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (location != null) {
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                } else {
+                    Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                    if (networkLocation != null) {
+                        latitude = networkLocation.getLatitude();
+                        longitude = networkLocation.getLongitude();
+                    } else {
+                        // Localização padrão se não conseguir obter
+                        latitude = -23.5505;
+                        longitude = -46.6333;
+                    }
                 }
+            } catch (Exception e) {
+                latitude = -23.5505;
+                longitude = -46.6333;
             }
         }
     }

@@ -5,9 +5,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,20 +15,23 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.entities.Aluno;
 import com.professor.frequenciaescolar.data.entities.Matricula;
-import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AlunoListActivity extends AppCompatActivity {
 
     private RecyclerView rvAlunos;
     private TextView tvEmpty;
-    private Spinner spinnerTurma;
     private AlunoAdapter adapter;
     private FrequenciaRepository repository;
-    private List<Turma> turmas = new ArrayList<>();
+
+    private long turmaId;
+    private String turmaNome;
+    private Map<Long, Aluno> alunosMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,93 +44,76 @@ public class AlunoListActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        // Receber dados da turma
+        turmaId = getIntent().getLongExtra("turma_id", -1);
+        turmaNome = getIntent().getStringExtra("turma_nome");
+
+        if (getSupportActionBar() != null && turmaNome != null) {
+            getSupportActionBar().setTitle("Alunos - " + turmaNome);
+        }
+
         rvAlunos = findViewById(R.id.rvAlunos);
         tvEmpty = findViewById(R.id.tvEmpty);
-        spinnerTurma = findViewById(R.id.spinnerTurma);
 
         adapter = new AlunoAdapter();
         rvAlunos.setLayoutManager(new LinearLayoutManager(this));
         rvAlunos.setAdapter(adapter);
 
+        repository = FrequenciaRepository.getInstance(this);
+
+        // Configurar clique no aluno
         adapter.setOnItemClickListener(aluno -> {
             Intent intent = new Intent(AlunoListActivity.this, MatriculaActivity.class);
             intent.putExtra("aluno_id", aluno.getId());
             startActivity(intent);
         });
 
-        repository = FrequenciaRepository.getInstance(this);
-        carregarTurmas();
+        if (turmaId != -1) {
+            carregarAlunos();
+        } else {
+            tvEmpty.setVisibility(View.VISIBLE);
+            tvEmpty.setText("Turma não encontrada");
+        }
     }
 
-    private void carregarTurmas() {
-        repository.getAllTurmasAtivas(turmasList -> {
-            runOnUiThread(() -> {
-                turmas.clear();
-                turmas.addAll(turmasList);
-
-                List<String> nomesTurmas = new ArrayList<>();
-                nomesTurmas.add("Selecione uma turma");
-                for (Turma t : turmas) {
-                    nomesTurmas.add(t.getNome() + " - " + t.getTurno());
-                }
-
-                ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
-                        android.R.layout.simple_spinner_item, nomesTurmas);
-                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spinnerTurma.setAdapter(spinnerAdapter);
-
-                spinnerTurma.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        if (position > 0) {
-                            carregarAlunosPorTurma(turmas.get(position - 1).getId());
-                        } else {
-                            rvAlunos.setVisibility(View.GONE);
-                            tvEmpty.setVisibility(View.VISIBLE);
-                            tvEmpty.setText("Selecione uma turma");
-                            adapter.setAlunos(new ArrayList<>());
-                        }
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                        // Não faz nada
-                    }
-                });
-            });
-        });
-    }
-
-    private void carregarAlunosPorTurma(long turmaId) {
+    private void carregarAlunos() {
         repository.getAlunosMatriculadosNaTurma(turmaId, matriculas -> {
             runOnUiThread(() -> {
                 if (matriculas == null || matriculas.isEmpty()) {
                     rvAlunos.setVisibility(View.GONE);
                     tvEmpty.setVisibility(View.VISIBLE);
-                    tvEmpty.setText("Nenhum aluno matriculado nesta turma.");
+                    tvEmpty.setText("Nenhum aluno matriculado nesta turma.\nClique no + para adicionar");
                     adapter.setAlunos(new ArrayList<>());
-                } else {
-                    rvAlunos.setVisibility(View.VISIBLE);
-                    tvEmpty.setVisibility(View.GONE);
-                    carregarDetalhesAlunos(matriculas);
+                    return;
+                }
+
+                // Limpar mapa antes de carregar
+                alunosMap.clear();
+
+                for (Matricula m : matriculas) {
+                    repository.getAlunoById(m.getAlunoId(), aluno -> {
+                        runOnUiThread(() -> {
+                            if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                                // Usar HashMap para evitar duplicação
+                                alunosMap.put(aluno.getId(), aluno);
+                                // Converter mapa para lista
+                                List<Aluno> alunosList = new ArrayList<>(alunosMap.values());
+                                adapter.setAlunos(alunosList);
+
+                                if (alunosList.isEmpty()) {
+                                    rvAlunos.setVisibility(View.GONE);
+                                    tvEmpty.setVisibility(View.VISIBLE);
+                                    tvEmpty.setText("Nenhum aluno ativo nesta turma");
+                                } else {
+                                    rvAlunos.setVisibility(View.VISIBLE);
+                                    tvEmpty.setVisibility(View.GONE);
+                                }
+                            }
+                        });
+                    });
                 }
             });
         });
-    }
-
-    private void carregarDetalhesAlunos(List<Matricula> matriculas) {
-        List<Aluno> alunosTemp = new ArrayList<>();
-
-        for (Matricula m : matriculas) {
-            repository.getAlunoById(m.getAlunoId(), aluno -> {
-                runOnUiThread(() -> {
-                    if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                        alunosTemp.add(aluno);
-                        adapter.setAlunos(new ArrayList<>(alunosTemp));
-                    }
-                });
-            });
-        }
     }
 
     @Override
@@ -144,6 +127,8 @@ public class AlunoListActivity extends AppCompatActivity {
         int itemId = item.getItemId();
         if (itemId == R.id.action_add) {
             Intent intent = new Intent(this, AlunoFormActivity.class);
+            intent.putExtra("turma_id", turmaId);
+            intent.putExtra("turma_nome", turmaNome);
             startActivity(intent);
             return true;
         } else if (itemId == android.R.id.home) {
@@ -156,11 +141,11 @@ public class AlunoListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (spinnerTurma.getAdapter() != null && spinnerTurma.getSelectedItemPosition() > 0) {
-            int position = spinnerTurma.getSelectedItemPosition();
-            if (position > 0 && position - 1 < turmas.size()) {
-                carregarAlunosPorTurma(turmas.get(position - 1).getId());
-            }
+        if (turmaId != -1) {
+            // Limpar adapter antes de recarregar
+            adapter.setAlunos(new ArrayList<>());
+            alunosMap.clear();
+            carregarAlunos();
         }
     }
 }

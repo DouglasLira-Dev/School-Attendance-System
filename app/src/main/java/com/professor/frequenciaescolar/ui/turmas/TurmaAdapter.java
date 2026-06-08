@@ -17,7 +17,8 @@ import java.util.List;
 public class TurmaAdapter extends RecyclerView.Adapter<TurmaAdapter.TurmaViewHolder> {
 
     private List<Turma> turmas = new ArrayList<>();
-    private OnItemClickListener listener;
+    private OnItemClickListener clickListener;
+    private OnItemLongClickListener longClickListener;
 
     @NonNull
     @Override
@@ -34,10 +35,19 @@ public class TurmaAdapter extends RecyclerView.Adapter<TurmaAdapter.TurmaViewHol
         holder.tvTurno.setText("Turno: " + turma.getTurno());
         holder.tvAnoLetivo.setText("Ano: " + turma.getAnoLetivo());
 
+        // Clique normal - abrir lista de alunos
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onItemClick(turma);
+            if (clickListener != null) {
+                clickListener.onItemClick(turma);
             }
+        });
+
+        // Clique longo (segurar) - editar turma
+        holder.itemView.setOnLongClickListener(v -> {
+            if (longClickListener != null) {
+                longClickListener.onItemLongClick(turma);
+            }
+            return true; // Retorna true para indicar que o evento foi consumido
         });
     }
 
@@ -52,11 +62,21 @@ public class TurmaAdapter extends RecyclerView.Adapter<TurmaAdapter.TurmaViewHol
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
-        this.listener = listener;
+        this.clickListener = listener;
     }
 
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.longClickListener = listener;
+    }
+
+    // Interface para clique normal
     public interface OnItemClickListener {
         void onItemClick(Turma turma);
+    }
+
+    // Interface para clique longo
+    public interface OnItemLongClickListener {
+        void onItemLongClick(Turma turma);
     }
 
     static class TurmaViewHolder extends RecyclerView.ViewHolder {

@@ -36,6 +36,8 @@ public class AlunoFormActivity extends AppCompatActivity {
     private FrequenciaRepository repository;
     private Aluno alunoAtual;
     private long alunoId = -1;
+    private long turmaIdRecebida = -1;
+    private String turmaNomeRecebida;
     private List<Turma> turmas = new ArrayList<>();
 
     @Override
@@ -55,6 +57,10 @@ public class AlunoFormActivity extends AppCompatActivity {
         etTelefone = findViewById(R.id.etTelefone);
         spinnerTurma = findViewById(R.id.spinnerTurma);
         btnSalvar = findViewById(R.id.btnSalvar);
+
+        // Receber dados da turma vinda da lista de alunos
+        turmaIdRecebida = getIntent().getLongExtra("turma_id", -1);
+        turmaNomeRecebida = getIntent().getStringExtra("turma_nome");
 
         repository = FrequenciaRepository.getInstance(this);
         carregarTurmas();
@@ -81,6 +87,16 @@ public class AlunoFormActivity extends AppCompatActivity {
                         android.R.layout.simple_spinner_item, nomesTurmas);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerTurma.setAdapter(adapter);
+
+                // Pré-selecionar a turma se veio da lista de alunos
+                if (turmaIdRecebida != -1) {
+                    for (int i = 0; i < turmas.size(); i++) {
+                        if (turmas.get(i).getId() == turmaIdRecebida) {
+                            spinnerTurma.setSelection(i + 1);
+                            break;
+                        }
+                    }
+                }
             });
         });
     }

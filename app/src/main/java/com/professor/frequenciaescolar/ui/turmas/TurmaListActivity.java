@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
+import com.professor.frequenciaescolar.ui.alunos.AlunoListActivity;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
 import com.professor.frequenciaescolar.utils.NotificationHelper;
@@ -43,11 +44,20 @@ public class TurmaListActivity extends AppCompatActivity {
         rvTurmas.setLayoutManager(new LinearLayoutManager(this));
         rvTurmas.setAdapter(adapter);
 
-        // Configurar clique no item
+        // Configurar clique no item - vai para lista de alunos
         adapter.setOnItemClickListener(turma -> {
+            Intent intent = new Intent(TurmaListActivity.this, AlunoListActivity.class);
+            intent.putExtra("turma_id", turma.getId());
+            intent.putExtra("turma_nome", turma.getNome());
+            startActivity(intent);
+        });
+
+        // Configurar clique longo - editar turma
+        adapter.setOnItemLongClickListener(turma -> {
             Intent intent = new Intent(TurmaListActivity.this, TurmaFormActivity.class);
             intent.putExtra("turma_id", turma.getId());
             startActivity(intent);
+            // Sem return - o método é void
         });
 
         // Inicializar repository
