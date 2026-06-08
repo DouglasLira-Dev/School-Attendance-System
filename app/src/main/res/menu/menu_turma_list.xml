@@ -8,4 +8,14 @@
         android:title="Adicionar"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/action_relatorios"
+        android:title="Relatórios"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_chamada"
+        android:title="Chamada"
+        app:showAsAction="never" />
+
 </menu>

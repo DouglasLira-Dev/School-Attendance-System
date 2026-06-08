@@ -266,6 +266,14 @@ public class FrequenciaRepository {
         });
     }
 
+    // ==================== MÉTODOS ADICIONAIS PARA RELATÓRIO ===================
+    public void getChamadasPorPeriodo(String dataInicio, String dataFim, OnDataFetched<List<Chamada>> callback) {
+        executorService.execute(() -> {
+            List<Chamada> chamadas = database.chamadaDao().getChamadasPorPeriodo(dataInicio, dataFim);
+            if (callback != null) callback.onDataFetched(chamadas);
+        });
+    }
+
     // ==================== CALLBACK INTERFACE ====================
 
     public interface OnDataFetched<T> {

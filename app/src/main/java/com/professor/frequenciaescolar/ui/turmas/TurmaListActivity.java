@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
+import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
+import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
 
 import java.util.List;
 
@@ -85,8 +87,17 @@ public class TurmaListActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_add) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_add) {
             Intent intent = new Intent(this, TurmaFormActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_relatorios) {
+            Intent intent = new Intent(this, RelatorioDashboardActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_chamada) {
+            Intent intent = new Intent(this, ChamadaActivity.class);
             startActivity(intent);
             return true;
         }
