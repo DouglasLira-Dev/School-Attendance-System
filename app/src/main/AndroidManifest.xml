@@ -23,14 +23,35 @@
         android:theme="@style/Theme.FrequenciaEscolar"
         tools:targetApi="31">
 
+        <!-- Tela de Turmas (Principal) -->
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.turmas.TurmaListActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Tela de Formulário de Turma -->
+        <activity
+            android:name=".ui.turmas.TurmaFormActivity"
+            android:exported="false" />
+
+        <!-- Tela de Listagem de Alunos -->
+        <activity
+            android:name=".ui.alunos.AlunoListActivity"
+            android:exported="false" />
+
+        <!-- Tela de Formulário de Aluno -->
+        <activity
+            android:name=".ui.alunos.AlunoFormActivity"
+            android:exported="false" />
+
+        <!-- Tela de Matrícula/Transferência/Expulsão -->
+        <activity
+            android:name=".ui.alunos.MatriculaActivity"
+            android:exported="false" />
 
     </application>
 
