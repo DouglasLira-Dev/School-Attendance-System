@@ -144,16 +144,6 @@ public class AlunoFormActivity extends AppCompatActivity {
             return;
         }
 
-        if (responsavel.isEmpty()) {
-            etResponsavel.setError("Responsável é obrigatório");
-            return;
-        }
-
-        if (turmaPosition == 0) {
-            Toast.makeText(this, "Selecione uma turma", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         long turmaId = turmas.get(turmaPosition - 1).getId();
         String dataAtual = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 

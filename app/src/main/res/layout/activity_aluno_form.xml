@@ -55,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="Nome do Responsável">
+                android:hint="Nome do Responsável (opcional)">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etResponsavel"
@@ -69,7 +69,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="Telefone do Responsável">
+                android:hint="Telefone do Responsável (opcional)">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etTelefone"
