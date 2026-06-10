@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.entities.Aluno;
@@ -34,6 +35,7 @@ public class AlunoListActivity extends AppCompatActivity {
     private long turmaId;
     private String turmaNome;
     private Map<Long, Aluno> alunosMap = new HashMap<>();
+    private SwipeRefreshLayout swipeRefresh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +44,14 @@ public class AlunoListActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // Configurar Swipe to Refresh
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        swipeRefresh.setOnRefreshListener(() -> {
+            carregarAlunos();  // Corrigido: carregarAlunos, não carregarTurmas
+            swipeRefresh.setRefreshing(false);
+        });
+
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }

@@ -43,5 +43,10 @@
         android:title="Alunos em Risco"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_exportar_turma"
+        android:title="Exportar Relatório"
+        app:showAsAction="never" />
+
 
 </menu>

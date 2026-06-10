@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -15,22 +14,34 @@
         app:title="Turmas"
         app:titleTextColor="@android:color/white" />
 
-    <!-- RecyclerView para lista de turmas -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvTurmas"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp" />
+        android:layout_height="match_parent">
 
-    <!-- TextView para quando não houver turmas -->
-    <TextView
-        android:id="@+id/tvEmpty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nenhuma turma cadastrada.\nClique no + para adicionar"
-        android:textAlignment="center"
-        android:textSize="16sp"
-        android:visibility="gone"
-        android:layout_gravity="center" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTurmas"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp" />
+
+            <TextView
+                android:id="@+id/tvEmpty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nenhuma turma cadastrada.\nClique no + para adicionar"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:visibility="gone"
+                android:layout_gravity="center" />
+
+        </LinearLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>
