@@ -17,6 +17,7 @@ import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.ui.alunos.AlunoListActivity;
+import com.professor.frequenciaescolar.ui.backup.BackupRestoreActivity;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
 import com.professor.frequenciaescolar.ui.configuracoes.ConfiguracoesActivity;
 import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
@@ -152,8 +153,6 @@ public class TurmaListActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.action_graficos) {
             // Verificar se há uma turma selecionada
-
-
             if (turmaSelecionadaId == -1) {
                 Toast.makeText(this, "Selecione uma turma primeiro", Toast.LENGTH_SHORT).show();
                 return true;
@@ -167,8 +166,11 @@ public class TurmaListActivity extends AppCompatActivity {
             Intent intent = new Intent(this, ImportarAlunosActivity.class);
             startActivity(intent);
             return true;
+        } else if (itemId == R.id.action_backup) {
+            Intent intent = new Intent(this, BackupRestoreActivity.class);
+            startActivity(intent);
+            return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

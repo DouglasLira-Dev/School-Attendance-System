@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="?android:attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvNomeArquivo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="backup_20260101_120000.db"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="01/01/2026 12:00:00"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray" />
+
+        <TextView
+            android:id="@+id/tvTamanho"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1.2 MB"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray" />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/btnRestaurar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_edit"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="Restaurar" />
+
+    <ImageButton
+        android:id="@+id/btnCompartilhar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_share"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="Compartilhar" />
+
+    <ImageButton
+        android:id="@+id/btnExcluir"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_delete"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="Excluir" />
+
+</LinearLayout>

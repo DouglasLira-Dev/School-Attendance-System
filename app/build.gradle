@@ -31,6 +31,16 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    packagingOptions {
+        // Resolve conflitos de arquivos 'META-INF/DEPENDENCIES' e outros comuns
+        pickFirsts += "META-INF/DEPENDENCIES"
+        pickFirsts += "META-INF/LICENSE"
+        pickFirsts += "META-INF/LICENSE.txt"
+        pickFirsts += "META-INF/NOTICE"
+        pickFirsts += "META-INF/NOTICE.txt"
+        pickFirsts += "META-INF/AL2.0"
+        pickFirsts += "META-INF/LGPL2.1"
+    }
 }
 
 dependencies {
@@ -55,7 +65,21 @@ dependencies {
     // PDF Generation
     implementation 'com.itextpdf:itext7-core:7.2.5'
 
-
     // Gráficos
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    // Google Drive API (completas)
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+
+    // Google API Client
+    implementation 'com.google.http-client:google-http-client-gson:1.43.3'
+    implementation 'com.google.http-client:google-http-client-android:1.43.3'
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+    implementation 'com.google.api-client:google-api-client-android:2.2.0'
+
+    // Google Drive Services
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0'
+
+    // WorkManager (para Backup Automático)
+    implementation 'androidx.work:work-runtime:2.9.0'
 }
