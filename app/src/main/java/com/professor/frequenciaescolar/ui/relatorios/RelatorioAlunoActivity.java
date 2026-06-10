@@ -26,6 +26,7 @@ import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.utils.ConfiguracoesManager;
 import com.professor.frequenciaescolar.utils.PdfGenerator;
+import com.professor.frequenciaescolar.utils.XlsxGenerator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,7 +40,9 @@ public class RelatorioAlunoActivity extends AppCompatActivity {
     private TextView tvAlunoNome, tvAlunoMatricula, tvAlunoTurma;
     private TextView tvTotalDias, tvPresencas, tvFaltasJustificadas, tvFaltasNaoJustificadas, tvPercentual;
     private TextInputEditText etDataInicio, etDataFim;
-    private Button btnFiltrar, btnExportar;
+    private Button btnFiltrar;
+    private Button btnExportarPDF;
+    private Button btnExportarXLSX;
     private RecyclerView rvHistorico;
     private TextView tvEmpty;
 
@@ -75,7 +78,8 @@ public class RelatorioAlunoActivity extends AppCompatActivity {
         etDataInicio = findViewById(R.id.etDataInicio);
         etDataFim = findViewById(R.id.etDataFim);
         btnFiltrar = findViewById(R.id.btnFiltrar);
-        btnExportar = findViewById(R.id.btnExportar);
+        btnExportarPDF = findViewById(R.id.btnExportarPDF);
+        btnExportarXLSX = findViewById(R.id.btnExportarXLSX);
         rvHistorico = findViewById(R.id.rvHistorico);
         tvEmpty = findViewById(R.id.tvEmpty);
 
@@ -111,7 +115,8 @@ public class RelatorioAlunoActivity extends AppCompatActivity {
         carregarDadosAluno();
 
         btnFiltrar.setOnClickListener(v -> carregarHistorico());
-        btnExportar.setOnClickListener(v -> exportarRelatorio());
+        btnExportarPDF.setOnClickListener(v -> exportarPDF());
+        btnExportarXLSX.setOnClickListener(v -> exportarXLSX());
     }
 
     private void carregarDadosAluno() {
@@ -337,6 +342,139 @@ public class RelatorioAlunoActivity extends AppCompatActivity {
 
                             PdfGenerator pdfGenerator = new PdfGenerator(this);
                             pdfGenerator.gerarRelatorioAluno(aluno, turmaAtual, chamadas,
+                                    todasPresencas, totalDias, presencasCount[0],
+                                    faltasJustificadas[0], faltasNaoJustificadas[0], percentual);
+                        }
+                    });
+                }
+            });
+        });
+    }
+    private void exportarPDF() {
+        // Verificar permissão
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    200);
+            return;
+        }
+
+        Toast.makeText(this, "Gerando PDF...", Toast.LENGTH_SHORT).show();
+
+        String dataInicioStr = etDataInicio.getText().toString();
+        String dataFimStr = etDataFim.getText().toString();
+
+        String dataInicio = converterData(dataInicioStr);
+        String dataFim = converterData(dataFimStr);
+
+        repository.getChamadasPorPeriodo(dataInicio, dataFim, chamadas -> {
+            runOnUiThread(() -> {
+                if (chamadas == null || chamadas.isEmpty()) {
+                    Toast.makeText(this, "Não há dados para o período selecionado", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                final int[] presencasCount = {0};
+                final int[] faltasJustificadas = {0};
+                final int[] faltasNaoJustificadas = {0};
+                final int[] processadas = {0};
+                final List<Presenca> todasPresencas = new ArrayList<>();
+
+                for (Chamada c : chamadas) {
+                    repository.getPresencasByChamada(c.getId(), presencasList -> {
+                        for (Presenca p : presencasList) {
+                            if (p.getAlunoId() == alunoId) {
+                                todasPresencas.add(p);
+                                if (p.isPresente()) {
+                                    presencasCount[0]++;
+                                } else if (p.getJustificativa() != null && !p.getJustificativa().isEmpty()) {
+                                    faltasJustificadas[0]++;
+                                } else {
+                                    faltasNaoJustificadas[0]++;
+                                }
+                                break;
+                            }
+                        }
+                        processadas[0]++;
+
+                        if (processadas[0] == chamadas.size()) {
+                            int totalDias = chamadas.size();
+                            boolean desconsiderarJustificadas = configManager.isDesconsiderarJustificadas();
+                            int diasConsiderados = desconsiderarJustificadas ?
+                                    totalDias - faltasJustificadas[0] : totalDias;
+                            double percentual = diasConsiderados > 0 ?
+                                    (presencasCount[0] * 100.0 / diasConsiderados) : 100;
+
+                            PdfGenerator pdfGenerator = new PdfGenerator(this);
+                            pdfGenerator.gerarRelatorioAluno(aluno, turmaAtual, chamadas,
+                                    todasPresencas, totalDias, presencasCount[0],
+                                    faltasJustificadas[0], faltasNaoJustificadas[0], percentual);
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    private void exportarXLSX() {
+        // Verificar permissão
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    201);
+            return;
+        }
+
+        Toast.makeText(this, "Gerando Excel...", Toast.LENGTH_SHORT).show();
+
+        String dataInicioStr = etDataInicio.getText().toString();
+        String dataFimStr = etDataFim.getText().toString();
+
+        String dataInicio = converterData(dataInicioStr);
+        String dataFim = converterData(dataFimStr);
+
+        repository.getChamadasPorPeriodo(dataInicio, dataFim, chamadas -> {
+            runOnUiThread(() -> {
+                if (chamadas == null || chamadas.isEmpty()) {
+                    Toast.makeText(this, "Não há dados para o período selecionado", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                final int[] presencasCount = {0};
+                final int[] faltasJustificadas = {0};
+                final int[] faltasNaoJustificadas = {0};
+                final int[] processadas = {0};
+                final List<Presenca> todasPresencas = new ArrayList<>();
+
+                for (Chamada c : chamadas) {
+                    repository.getPresencasByChamada(c.getId(), presencasList -> {
+                        for (Presenca p : presencasList) {
+                            if (p.getAlunoId() == alunoId) {
+                                todasPresencas.add(p);
+                                if (p.isPresente()) {
+                                    presencasCount[0]++;
+                                } else if (p.getJustificativa() != null && !p.getJustificativa().isEmpty()) {
+                                    faltasJustificadas[0]++;
+                                } else {
+                                    faltasNaoJustificadas[0]++;
+                                }
+                                break;
+                            }
+                        }
+                        processadas[0]++;
+
+                        if (processadas[0] == chamadas.size()) {
+                            int totalDias = chamadas.size();
+                            boolean desconsiderarJustificadas = configManager.isDesconsiderarJustificadas();
+                            int diasConsiderados = desconsiderarJustificadas ?
+                                    totalDias - faltasJustificadas[0] : totalDias;
+                            double percentual = diasConsiderados > 0 ?
+                                    (presencasCount[0] * 100.0 / diasConsiderados) : 100;
+
+                            XlsxGenerator xlsxGenerator = new XlsxGenerator(this);
+                            xlsxGenerator.gerarRelatorioAlunoExcel(aluno, turmaAtual, chamadas,
                                     todasPresencas, totalDias, presencasCount[0],
                                     faltasJustificadas[0], faltasNaoJustificadas[0], percentual);
                         }
