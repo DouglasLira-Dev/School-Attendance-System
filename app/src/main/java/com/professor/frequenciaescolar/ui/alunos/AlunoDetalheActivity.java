@@ -19,6 +19,7 @@ import com.professor.frequenciaescolar.data.entities.Matricula;
 import com.professor.frequenciaescolar.data.entities.Presenca;
 import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
+import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioAlunoActivity;
 
 import java.text.SimpleDateFormat;
@@ -86,15 +87,26 @@ public class AlunoDetalheActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_relatorio) {
+        int itemId = item.getItemId();
+
+        if (itemId == R.id.action_relatorio) {
             Intent intent = new Intent(this, RelatorioAlunoActivity.class);
             intent.putExtra("aluno_id", alunoId);
             startActivity(intent);
             return true;
-        } else if (item.getItemId() == android.R.id.home) {
+        } else if (itemId == R.id.action_graficos) {
+            // Gráficos do aluno específico
+            Intent intent = new Intent(this, GraficosFrequenciaActivity.class);
+            intent.putExtra("turma_id", turmaAtual != null ? turmaAtual.getId() : -1);
+            intent.putExtra("aluno_id", alunoId);
+            intent.putExtra("aluno_nome", aluno != null ? aluno.getNome() : "Aluno");
+            startActivity(intent);
+            return true;
+        } else if (itemId == android.R.id.home) {
             finish();
             return true;
         }
+
         return super.onOptionsItemSelected(item);
     }
 

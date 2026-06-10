@@ -8,4 +8,10 @@
         android:icon="@android:drawable/ic_menu_view"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/action_graficos"
+        android:title="Gráficos"
+        android:icon="@android:drawable/ic_menu_view"
+        app:showAsAction="always" />
+
 </menu>

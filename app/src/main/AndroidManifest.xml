@@ -105,7 +105,11 @@
             android:name=".ui.relatorios.RelatorioAlunoActivity"
             android:exported="false" />
 
-        <!-- Dentro de <application> -->
+        <!-- Tela de Gráficos -->
+        <activity
+            android:name=".ui.graficos.GraficosFrequenciaActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

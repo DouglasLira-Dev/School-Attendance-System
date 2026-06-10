@@ -9,6 +9,11 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_graficos"
+        android:title="Gráficos"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_transferir"
         android:title="Transferência/Expulsão"
         app:showAsAction="never" />

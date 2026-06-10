@@ -19,6 +19,7 @@ import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.ui.alunos.AlunoListActivity;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
 import com.professor.frequenciaescolar.ui.configuracoes.ConfiguracoesActivity;
+import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
 import com.professor.frequenciaescolar.utils.NotificationHelper;
 import com.professor.frequenciaescolar.utils.NotificationScheduler;
@@ -29,6 +30,7 @@ public class TurmaListActivity extends AppCompatActivity {
     private TextView tvEmpty;
     private TurmaAdapter adapter;
     private FrequenciaRepository repository;
+    private long turmaSelecionadaId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +49,7 @@ public class TurmaListActivity extends AppCompatActivity {
 
         // Clique normal - abrir lista de alunos
         adapter.setOnItemClickListener(turma -> {
+            turmaSelecionadaId = turma.getId();
             Intent intent = new Intent(TurmaListActivity.this, AlunoListActivity.class);
             intent.putExtra("turma_id", turma.getId());
             intent.putExtra("turma_nome", turma.getNome());
@@ -144,6 +147,19 @@ public class TurmaListActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.action_configuracoes) {
             Intent intent = new Intent(this, ConfiguracoesActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_graficos) {
+            // Verificar se há uma turma selecionada
+
+
+            if (turmaSelecionadaId == -1) {
+                Toast.makeText(this, "Selecione uma turma primeiro", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            Intent intent = new Intent(this, GraficosFrequenciaActivity.class);
+            intent.putExtra("turma_id", turmaSelecionadaId);
+            intent.putExtra("aluno_id", -1L);
             startActivity(intent);
             return true;
         }
