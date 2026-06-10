@@ -1,5 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Cores padrão do Material Design -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Cores para indicadores de risco -->
+    <color name="risk_critical">#FF0000</color>      <!-- Vermelho - Crítico (< 50%) -->
+    <color name="risk_high">#FF6600</color>         <!-- Laranja - Alto (50% - 64%) -->
+    <color name="risk_moderate">#FFCC00</color>     <!-- Amarelo - Moderado (65% - 74%) -->
+    <color name="risk_attention">#3399FF</color>    <!-- Azul - Atenção (75% - 79%) -->
+    <color name="risk_good">#33CC33</color>         <!-- Verde - Bom (≥ 80%) -->
+
+    <!-- Cores para status -->
+    <color name="status_presente">#33CC33</color>
+    <color name="status_falta_justificada">#FFCC00</color>
+    <color name="status_falta_nao_justificada">#FF0000</color>
+
+    <!-- Cores para gráficos -->
+    <color name="chart_presente">#33CC33</color>
+    <color name="chart_falta">#FF0000</color>
+    <color name="chart_media">#3399FF</color>
+
+    <!-- Cores para botões -->
+    <color name="btn_primary">#6200EE</color>
+    <color name="btn_success">#33CC33</color>
+    <color name="btn_warning">#FFCC00</color>
+    <color name="btn_danger">#FF0000</color>
+    <color name="btn_info">#3399FF</color>
 </resources>

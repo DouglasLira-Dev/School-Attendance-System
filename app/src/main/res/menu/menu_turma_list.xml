@@ -38,5 +38,10 @@
         android:title="Backup"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_alunos_risco"
+        android:title="Alunos em Risco"
+        app:showAsAction="never" />
+
 
 </menu>

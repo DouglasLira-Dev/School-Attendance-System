@@ -120,6 +120,11 @@
             android:name=".ui.backup.BackupRestoreActivity"
             android:exported="false" />
 
+        <!-- Tela de Alunos em Risco -->
+        <activity
+            android:name=".ui.risco.AlunosRiscoActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

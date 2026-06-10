@@ -23,6 +23,7 @@ import com.professor.frequenciaescolar.ui.configuracoes.ConfiguracoesActivity;
 import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
 import com.professor.frequenciaescolar.ui.importar.ImportarAlunosActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
+import com.professor.frequenciaescolar.ui.risco.AlunosRiscoActivity;
 import com.professor.frequenciaescolar.utils.NotificationHelper;
 import com.professor.frequenciaescolar.utils.NotificationScheduler;
 
@@ -168,6 +169,10 @@ public class TurmaListActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.action_backup) {
             Intent intent = new Intent(this, BackupRestoreActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_alunos_risco) {
+            Intent intent = new Intent(this, AlunosRiscoActivity.class);
             startActivity(intent);
             return true;
         }
