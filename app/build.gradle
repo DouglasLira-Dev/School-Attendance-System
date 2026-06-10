@@ -51,4 +51,7 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.espresso.core
     androidTestImplementation libs.ext.junit
+
+    // PDF Generation
+    implementation 'com.itextpdf:itext7-core:7.2.5'
 }

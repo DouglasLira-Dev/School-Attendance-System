@@ -1,6 +1,8 @@
 package com.professor.frequenciaescolar.ui.relatorios;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -9,6 +11,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,6 +25,7 @@ import com.professor.frequenciaescolar.data.entities.Presenca;
 import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.utils.ConfiguracoesManager;
+import com.professor.frequenciaescolar.utils.PdfGenerator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -273,8 +278,72 @@ public class RelatorioAlunoActivity extends AppCompatActivity {
     }
 
     private void exportarRelatorio() {
-        Toast.makeText(this, "Exportando relatório...", Toast.LENGTH_SHORT).show();
-        // TODO: Implementar exportação PDF
+        // Verificar permissão
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    200);
+            return;
+        }
+
+        Toast.makeText(this, "Gerando PDF...", Toast.LENGTH_SHORT).show();
+
+        // Coletar dados para o PDF
+        String dataInicioStr = etDataInicio.getText().toString();
+        String dataFimStr = etDataFim.getText().toString();
+
+        String dataInicio = converterData(dataInicioStr);
+        String dataFim = converterData(dataFimStr);
+
+        repository.getChamadasPorPeriodo(dataInicio, dataFim, chamadas -> {
+            runOnUiThread(() -> {
+                if (chamadas == null || chamadas.isEmpty()) {
+                    Toast.makeText(this, "Não há dados para o período selecionado", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Calcular estatísticas
+                final int[] presencasCount = {0};
+                final int[] faltasJustificadas = {0};
+                final int[] faltasNaoJustificadas = {0};
+                final int[] processadas = {0};
+                final List<Presenca> todasPresencas = new ArrayList<>();
+
+                for (Chamada c : chamadas) {
+                    repository.getPresencasByChamada(c.getId(), presencasList -> {
+                        for (Presenca p : presencasList) {
+                            if (p.getAlunoId() == alunoId) {
+                                todasPresencas.add(p);
+                                if (p.isPresente()) {
+                                    presencasCount[0]++;
+                                } else if (p.getJustificativa() != null && !p.getJustificativa().isEmpty()) {
+                                    faltasJustificadas[0]++;
+                                } else {
+                                    faltasNaoJustificadas[0]++;
+                                }
+                                break;
+                            }
+                        }
+                        processadas[0]++;
+
+                        if (processadas[0] == chamadas.size()) {
+                            int totalDias = chamadas.size();
+                            boolean desconsiderarJustificadas = configManager.isDesconsiderarJustificadas();
+                            int diasConsiderados = desconsiderarJustificadas ?
+                                    totalDias - faltasJustificadas[0] : totalDias;
+                            double percentual = diasConsiderados > 0 ?
+                                    (presencasCount[0] * 100.0 / diasConsiderados) : 100;
+
+                            PdfGenerator pdfGenerator = new PdfGenerator(this);
+                            pdfGenerator.gerarRelatorioAluno(aluno, turmaAtual, chamadas,
+                                    todasPresencas, totalDias, presencasCount[0],
+                                    faltasJustificadas[0], faltasNaoJustificadas[0], percentual);
+                        }
+                    });
+                }
+            });
+        });
     }
 
     @Override
