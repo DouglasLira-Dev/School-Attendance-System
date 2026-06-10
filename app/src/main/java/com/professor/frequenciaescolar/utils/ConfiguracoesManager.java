@@ -2,7 +2,14 @@ package com.professor.frequenciaescolar.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import com.professor.frequenciaescolar.data.entities.Feriado;
+
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class ConfiguracoesManager {
 
@@ -93,5 +100,43 @@ public class ConfiguracoesManager {
 
     public boolean isDesconsiderarJustificadas() {
         return preferences.getBoolean(KEY_DESCONSIDERAR_JUSTIFICADAS, true);
+    }
+    // Verificar se uma data é feriado
+    public boolean isFeriado(String data, List<Feriado> feriados) {
+        for (Feriado f : feriados) {
+            if (f.getData().equals(data)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Calcular dias letivos no período (excluindo feriados e finais de semana)
+    public int calcularDiasLetivos(String dataInicio, String dataFim, List<Feriado> feriados) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date inicio = sdf.parse(dataInicio);
+            Date fim = sdf.parse(dataFim);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(inicio);
+
+            int diasLetivos = 0;
+            boolean[] diasLetivosSemana = getDiasLetivos();
+
+            while (!cal.getTime().after(fim)) {
+                int diaSemana = cal.get(Calendar.DAY_OF_WEEK) - 1;
+                String dataStr = sdf.format(cal.getTime());
+
+                // Verifica se é dia útil e não é feriado
+                if (diasLetivosSemana[diaSemana] && !isFeriado(dataStr, feriados)) {
+                    diasLetivos++;
+                }
+                cal.add(Calendar.DAY_OF_MONTH, 1);
+            }
+            return diasLetivos;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }

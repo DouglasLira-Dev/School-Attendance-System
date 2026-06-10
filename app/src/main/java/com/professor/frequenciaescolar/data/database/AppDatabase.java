@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase;
 
 import com.professor.frequenciaescolar.data.entities.Aluno;
 import com.professor.frequenciaescolar.data.entities.Chamada;
+import com.professor.frequenciaescolar.data.entities.Feriado;
 import com.professor.frequenciaescolar.data.entities.Matricula;
 import com.professor.frequenciaescolar.data.entities.MovimentacaoAluno;
 import com.professor.frequenciaescolar.data.entities.Presenca;
@@ -20,9 +21,10 @@ import com.professor.frequenciaescolar.data.entities.Turma;
                 Matricula.class,
                 Chamada.class,
                 Presenca.class,
-                MovimentacaoAluno.class
+                MovimentacaoAluno.class,
+                Feriado.class
         },
-        version = 1,
+        version = 2,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -34,6 +36,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ChamadaDao chamadaDao();
     public abstract PresencaDao presencaDao();
     public abstract MovimentacaoDao movimentacaoDao();
+    public abstract FeriadoDao feriadoDao();  // Adicionado
 
     // Singleton pattern
     private static volatile AppDatabase INSTANCE;
@@ -47,7 +50,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "frequencia_escolar.db"
                             )
-                            .fallbackToDestructiveMigration() // Para desenvolvimento (recria o banco se mudar versão)
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }
