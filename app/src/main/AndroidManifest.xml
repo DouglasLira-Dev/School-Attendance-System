@@ -90,11 +90,6 @@
             android:name=".ui.relatorios.RelatorioDashboardActivity"
             android:exported="false" />
 
-        <!-- Receptor para notificações agendadas -->
-        <receiver
-            android:name=".utils.NotificationReceiver"
-            android:exported="false" />
-
         <!-- Tela de Configurações -->
         <activity
             android:name=".ui.configuracoes.ConfiguracoesActivity"
@@ -110,6 +105,11 @@
             android:name=".ui.graficos.GraficosFrequenciaActivity"
             android:exported="false" />
 
+        <!-- Tela de Importação de Alunos -->
+        <activity
+            android:name=".ui.importar.ImportarAlunosActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -119,6 +119,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Receptor para notificações agendadas -->
+        <receiver
+            android:name=".utils.NotificationReceiver"
+            android:exported="false" />
 
     </application>
 

@@ -14,6 +14,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_importar"
+        android:title="Importar Alunos"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_transferir"
         android:title="Transferência/Expulsão"
         app:showAsAction="never" />

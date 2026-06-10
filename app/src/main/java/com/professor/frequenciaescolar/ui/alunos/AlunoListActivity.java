@@ -17,6 +17,7 @@ import com.professor.frequenciaescolar.data.entities.Aluno;
 import com.professor.frequenciaescolar.data.entities.Matricula;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
+import com.professor.frequenciaescolar.ui.importar.ImportarAlunosActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,6 +140,10 @@ public class AlunoListActivity extends AppCompatActivity {
             Intent intent = new Intent(this, GraficosFrequenciaActivity.class);
             intent.putExtra("turma_id", turmaId);
             intent.putExtra("aluno_id", -1L);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_importar) {
+            Intent intent = new Intent(this, ImportarAlunosActivity.class);
             startActivity(intent);
             return true;
         }
