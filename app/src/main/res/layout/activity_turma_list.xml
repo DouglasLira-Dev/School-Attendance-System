@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -14,6 +15,7 @@
         app:title="Turmas"
         app:titleTextColor="@android:color/white" />
 
+    <!-- SwipeRefreshLayout -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -24,12 +26,14 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <!-- RecyclerView para lista de turmas -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvTurmas"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="8dp" />
 
+            <!-- TextView para quando não houver turmas -->
             <TextView
                 android:id="@+id/tvEmpty"
                 android:layout_width="wrap_content"
@@ -38,7 +42,8 @@
                 android:textAlignment="center"
                 android:textSize="16sp"
                 android:visibility="gone"
-                android:layout_gravity="center" />
+                android:layout_gravity="center"
+                android:padding="32dp" />
 
         </LinearLayout>
 

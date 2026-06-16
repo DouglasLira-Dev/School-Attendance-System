@@ -14,42 +14,56 @@
         app:title="Alunos"
         app:titleTextColor="@android:color/white" />
 
-    <LinearLayout
+    <!-- Campo de Busca -->
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp">
+        android:layout_margin="16dp"
+        android:paddingEnd="8dp"
+        app:endIconMode="clear_text"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etBusca"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Turma: "
-            android:textSize="16sp"
-            android:layout_gravity="center_vertical" />
+            android:hint="Buscar por nome ou matrícula"
+            android:inputType="text"
+            android:maxLines="1"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="8dp" />
 
-        <Spinner
-            android:id="@+id/spinnerTurma"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-    </LinearLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvAlunos"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp" />
+        android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/tvEmpty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nenhum aluno matriculado nesta turma."
-        android:textAlignment="center"
-        android:textSize="16sp"
-        android:visibility="gone"
-        android:layout_gravity="center" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAlunos"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp" />
+
+            <TextView
+                android:id="@+id/tvEmpty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nenhum aluno matriculado nesta turma."
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:visibility="gone"
+                android:layout_gravity="center"
+                android:padding="32dp" />
+
+        </LinearLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>

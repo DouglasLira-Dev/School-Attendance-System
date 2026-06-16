@@ -29,11 +29,6 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_configuracoes"
-        android:title="Configurações"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/action_backup"
         android:title="Backup"
         app:showAsAction="never" />
@@ -48,5 +43,9 @@
         android:title="Exportar Relatório"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_configuracoes"
+        android:title="Configurações"
+        app:showAsAction="never" />
 
 </menu>

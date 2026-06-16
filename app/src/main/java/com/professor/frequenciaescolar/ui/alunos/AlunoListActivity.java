@@ -1,12 +1,15 @@
 package com.professor.frequenciaescolar.ui.alunos;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -14,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.textfield.TextInputEditText;
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.entities.Aluno;
 import com.professor.frequenciaescolar.data.entities.Matricula;
@@ -22,23 +26,22 @@ import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
 import com.professor.frequenciaescolar.ui.importar.ImportarAlunosActivity;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class AlunoListActivity extends AppCompatActivity {
 
     private RecyclerView rvAlunos;
     private TextView tvEmpty;
+    private TextInputEditText etBusca;
     private AlunoAdapter adapter;
     private FrequenciaRepository repository;
+    private SwipeRefreshLayout swipeRefresh;
 
     private long turmaId;
     private String turmaNome;
-    private Map<Long, Aluno> alunosMap = new HashMap<>();
-    private SwipeRefreshLayout swipeRefresh;
+    private List<Aluno> alunos = new ArrayList<>();
+    private List<Aluno> alunosFiltrados = new ArrayList<>();
 
-    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,11 +50,11 @@ public class AlunoListActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Configurar Swipe to Refresh
+        // Inicializar SwipeRefreshLayout
         swipeRefresh = findViewById(R.id.swipeRefresh);
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
-                carregarAlunos();  // Corrigido: carregarAlunos, não carregarTurmas
+                carregarAlunos();
                 swipeRefresh.setRefreshing(false);
             });
         }
@@ -70,6 +73,7 @@ public class AlunoListActivity extends AppCompatActivity {
 
         rvAlunos = findViewById(R.id.rvAlunos);
         tvEmpty = findViewById(R.id.tvEmpty);
+        etBusca = findViewById(R.id.etBusca);
 
         adapter = new AlunoAdapter();
         rvAlunos.setLayoutManager(new LinearLayoutManager(this));
@@ -77,11 +81,25 @@ public class AlunoListActivity extends AppCompatActivity {
 
         repository = FrequenciaRepository.getInstance(this);
 
-        // Configurar clique no aluno - vai para tela de detalhes
+        // Configurar clique no aluno
         adapter.setOnItemClickListener(aluno -> {
             Intent intent = new Intent(AlunoListActivity.this, AlunoDetalheActivity.class);
             intent.putExtra("aluno_id", aluno.getId());
             startActivity(intent);
+        });
+
+        // Configurar busca
+        etBusca.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filtrarAlunos(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
         });
 
         if (turmaId != -1) {
@@ -103,33 +121,45 @@ public class AlunoListActivity extends AppCompatActivity {
                     return;
                 }
 
-                // Limpar mapa antes de carregar
-                alunosMap.clear();
-
+                alunos.clear();
                 for (Matricula m : matriculas) {
                     repository.getAlunoById(m.getAlunoId(), aluno -> {
-                        runOnUiThread(() -> {
-                            if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                                // Usar HashMap para evitar duplicação
-                                alunosMap.put(aluno.getId(), aluno);
-                                // Converter mapa para lista
-                                List<Aluno> alunosList = new ArrayList<>(alunosMap.values());
-                                adapter.setAlunos(alunosList);
-
-                                if (alunosList.isEmpty()) {
-                                    rvAlunos.setVisibility(View.GONE);
-                                    tvEmpty.setVisibility(View.VISIBLE);
-                                    tvEmpty.setText("Nenhum aluno ativo nesta turma");
-                                } else {
-                                    rvAlunos.setVisibility(View.VISIBLE);
-                                    tvEmpty.setVisibility(View.GONE);
-                                }
-                            }
-                        });
+                        if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                            alunos.add(aluno);
+                            // Atualizar lista filtrada
+                            filtrarAlunos(etBusca.getText().toString());
+                        }
                     });
                 }
             });
         });
+    }
+
+    private void filtrarAlunos(String texto) {
+        alunosFiltrados.clear();
+
+        if (texto.isEmpty()) {
+            alunosFiltrados.addAll(alunos);
+        } else {
+            String busca = texto.toLowerCase().trim();
+            for (Aluno aluno : alunos) {
+                if (aluno.getNome().toLowerCase().contains(busca) ||
+                        aluno.getMatricula().toLowerCase().contains(busca)) {
+                    alunosFiltrados.add(aluno);
+                }
+            }
+        }
+
+        adapter.setAlunos(new ArrayList<>(alunosFiltrados));
+
+        if (alunosFiltrados.isEmpty()) {
+            rvAlunos.setVisibility(View.GONE);
+            tvEmpty.setVisibility(View.VISIBLE);
+            tvEmpty.setText("Nenhum aluno encontrado para a busca");
+        } else {
+            rvAlunos.setVisibility(View.VISIBLE);
+            tvEmpty.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -147,9 +177,6 @@ public class AlunoListActivity extends AppCompatActivity {
             intent.putExtra("turma_nome", turmaNome);
             startActivity(intent);
             return true;
-        } else if (itemId == android.R.id.home) {
-            finish();
-            return true;
         } else if (itemId == R.id.action_graficos) {
             Intent intent = new Intent(this, GraficosFrequenciaActivity.class);
             intent.putExtra("turma_id", turmaId);
@@ -158,7 +185,12 @@ public class AlunoListActivity extends AppCompatActivity {
             return true;
         } else if (itemId == R.id.action_importar) {
             Intent intent = new Intent(this, ImportarAlunosActivity.class);
+            intent.putExtra("turma_id", turmaId);
+            intent.putExtra("turma_nome", turmaNome);
             startActivity(intent);
+            return true;
+        } else if (itemId == android.R.id.home) {
+            finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -168,9 +200,6 @@ public class AlunoListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (turmaId != -1) {
-            // Limpar adapter antes de recarregar
-            adapter.setAlunos(new ArrayList<>());
-            alunosMap.clear();
             carregarAlunos();
         }
     }

@@ -1,5 +1,7 @@
 package com.professor.frequenciaescolar.ui.turmas;
 
+import static com.google.android.gms.common.util.DeviceProperties.isTablet;
+
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -8,6 +10,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.LayoutInflater;
@@ -34,6 +37,7 @@ import com.professor.frequenciaescolar.data.entities.Matricula;
 import com.professor.frequenciaescolar.data.entities.Presenca;
 import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
+import com.professor.frequenciaescolar.ui.alunos.AlunoAdapter;
 import com.professor.frequenciaescolar.ui.alunos.AlunoListActivity;
 import com.professor.frequenciaescolar.ui.backup.BackupRestoreActivity;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
@@ -78,6 +82,10 @@ public class TurmaListActivity extends AppCompatActivity {
     private long turmaSelecionadaId = -1;
     private AppDatabase database;
     private SwipeRefreshLayout swipeRefresh;
+    private LinearLayout layoutDetalhes;
+    private RecyclerView rvAlunosTablet;
+    private TextView tvTurmaSelecionada;
+    private AlunoAdapter alunoAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,18 +103,37 @@ public class TurmaListActivity extends AppCompatActivity {
         rvTurmas = findViewById(R.id.rvTurmas);
         tvEmpty = findViewById(R.id.tvEmpty);
 
+        // Verificar se é tablet e configurar painel de detalhes
+        if (isTablet()) {
+            layoutDetalhes = findViewById(R.id.layoutDetalhes);
+            rvAlunosTablet = findViewById(R.id.rvAlunosTablet);
+            tvTurmaSelecionada = findViewById(R.id.tvTurmaSelecionada);
+
+            alunoAdapter = new AlunoAdapter();
+            rvAlunosTablet.setLayoutManager(new LinearLayoutManager(this));
+            rvAlunosTablet.setAdapter(alunoAdapter);
+        }
+
         adapter = new TurmaAdapter();
         rvTurmas.setLayoutManager(new LinearLayoutManager(this));
         rvTurmas.setAdapter(adapter);
 
         // Clique normal - abrir lista de alunos
+        // Clique normal - abrir lista de alunos (ou detalhes no tablet)
         adapter.setOnItemClickListener(turma -> {
             turmaSelecionadaId = turma.getId();
-            Intent intent = new Intent(TurmaListActivity.this, AlunoListActivity.class);
-            intent.putExtra("turma_id", turma.getId());
-            intent.putExtra("turma_nome", turma.getNome());
-            startActivity(intent);
+            if (isTablet()) {
+                // No tablet, carrega os detalhes no painel direito
+                carregarDetalhesTurma(turma);
+            } else {
+                // No celular, abre a lista de alunos
+                Intent intent = new Intent(TurmaListActivity.this, AlunoListActivity.class);
+                intent.putExtra("turma_id", turma.getId());
+                intent.putExtra("turma_nome", turma.getNome());
+                startActivity(intent);
+            }
         });
+
 
         // Clique longo - mostrar opções (Editar/Excluir)
         adapter.setOnItemLongClickListener(turma -> {
@@ -540,5 +567,36 @@ public class TurmaListActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    private boolean isTablet() {
+        return getResources().getBoolean(R.bool.isTablet);
+    }
+
+    // ==================== CARREGAR DETALHES DA TURMA (TABLET) ====================
+    private void carregarDetalhesTurma(Turma turma) {
+        if (!isTablet()) return;
+
+        layoutDetalhes.setVisibility(View.VISIBLE);
+        tvTurmaSelecionada.setText(turma.getNome() + " - " + turma.getTurno());
+
+        // Carregar alunos da turma
+        repository.getAlunosMatriculadosNaTurma(turma.getId(), matriculas -> {
+            runOnUiThread(() -> {
+                if (matriculas == null || matriculas.isEmpty()) {
+                    alunoAdapter.setAlunos(new ArrayList<>());
+                    return;
+                }
+
+                List<Aluno> alunos = new ArrayList<>();
+                for (Matricula m : matriculas) {
+                    repository.getAlunoById(m.getAlunoId(), aluno -> {
+                        if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                            alunos.add(aluno);
+                            alunoAdapter.setAlunos(new ArrayList<>(alunos));
+                        }
+                    });
+                }
+            });
+        });
     }
 }
