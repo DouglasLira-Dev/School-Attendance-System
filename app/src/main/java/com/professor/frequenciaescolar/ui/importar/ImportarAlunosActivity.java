@@ -115,9 +115,9 @@ public class ImportarAlunosActivity extends AppCompatActivity {
     }
 
     private void processarArquivo() {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(arquivoUri);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        // ==================== TRY-WITH-RESOURCES ====================
+        try (InputStream inputStream = getContentResolver().openInputStream(arquivoUri);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
             previewList.clear();
             erros.clear();
@@ -153,9 +153,6 @@ public class ImportarAlunosActivity extends AppCompatActivity {
                     erros.add("Linha " + lineNumber + ": Formato inválido (5 colunas esperadas)");
                 }
             }
-
-            reader.close();
-            inputStream.close();
 
             tvResumo.setText(String.format("Total de alunos encontrados: %d", previewList.size()));
             previewAdapter.notifyDataSetChanged();

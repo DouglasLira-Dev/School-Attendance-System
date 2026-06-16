@@ -33,4 +33,6 @@ public interface TurmaDao {
 
     @Query("UPDATE turmas SET ativo = 0 WHERE id = :id")
     void desativarTurma(long id);
+    @Query("SELECT * FROM turmas WHERE nome = :nome AND turno = :turno AND ativo = 1 LIMIT 1")
+    Turma getTurmaPorNomeETurno(String nome, String turno);
 }

@@ -83,6 +83,7 @@ public class TurmaListActivity extends AppCompatActivity {
     private RecyclerView rvAlunosTablet;
     private TextView tvTurmaSelecionada;
     private AlunoAdapter alunoAdapter;
+    private boolean carregouPelaVez = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -173,7 +174,11 @@ public class TurmaListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        carregarTurmas();
+        if (!carregouPelaVez) {
+            carregouPelaVez = true;
+        } else {
+            carregarTurmas();
+        }
     }
 
     // ==================== CARREGAR TURMAS ====================

@@ -6,6 +6,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -29,28 +31,33 @@ public class TurmaFormActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_turma_form);
 
-        // Configurar toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
-        // Inicializar views
         etNome = findViewById(R.id.etNome);
         etTurno = findViewById(R.id.etTurno);
         etAnoLetivo = findViewById(R.id.etAnoLetivo);
         btnSalvar = findViewById(R.id.btnSalvar);
 
-        // Inicializar repository
         repository = FrequenciaRepository.getInstance(this);
 
-        // Verificar se é edição
         if (getIntent().hasExtra("turma_id")) {
             turmaId = getIntent().getLongExtra("turma_id", -1);
             carregarTurma();
         }
 
-        // Configurar botão salvar
         btnSalvar.setOnClickListener(v -> salvarTurma());
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                confirmarSaida();
+            }
+        });
+
     }
 
     private void carregarTurma() {
@@ -71,7 +78,6 @@ public class TurmaFormActivity extends AppCompatActivity {
         String turno = etTurno.getText().toString().trim();
         String anoLetivoStr = etAnoLetivo.getText().toString().trim();
 
-        // Validações
         if (nome.isEmpty()) {
             etNome.setError("Nome é obrigatório");
             return;
@@ -96,32 +102,80 @@ public class TurmaFormActivity extends AppCompatActivity {
         }
 
         if (turmaAtual == null) {
-            // Criar nova turma
-            Turma novaTurma = new Turma(nome, turno, anoLetivo, true);
-            repository.insertTurma(novaTurma, () -> {
+            repository.getTurmaPorNomeETurno(nome, turno, turmaExistente -> {
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Turma salva com sucesso!", Toast.LENGTH_SHORT).show();
-                    finish();
+                    if (turmaExistente != null) {
+                        etNome.setError("⚠️ Já existe uma turma com este nome e turno");
+                        etNome.requestFocus();
+                        return;
+                    }
+
+                    Turma novaTurma = new Turma(nome, turno, anoLetivo, true);
+                    repository.insertTurma(novaTurma, () -> {
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "✅ Turma salva com sucesso!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        });
+                    });
+                });
+            });
+            return;
+        }
+
+        if (!turmaAtual.getNome().equals(nome) || !turmaAtual.getTurno().equals(turno)) {
+            repository.getTurmaPorNomeETurno(nome, turno, turmaExistente -> {
+                runOnUiThread(() -> {
+                    if (turmaExistente != null && turmaExistente.getId() != turmaAtual.getId()) {
+                        etNome.setError("⚠️ Já existe uma turma com este nome e turno");
+                        etNome.requestFocus();
+                        return;
+                    }
+                    atualizarTurma(nome, turno, anoLetivo);
                 });
             });
         } else {
-            // Atualizar turma existente
-            turmaAtual.setNome(nome);
-            turmaAtual.setTurno(turno);
-            turmaAtual.setAnoLetivo(anoLetivo);
-            repository.updateTurma(turmaAtual, () -> {
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Turma atualizada com sucesso!", Toast.LENGTH_SHORT).show();
-                    finish();
-                });
+            atualizarTurma(nome, turno, anoLetivo);
+        }
+    }
+
+    private void atualizarTurma(String nome, String turno, int anoLetivo) {
+        turmaAtual.setNome(nome);
+        turmaAtual.setTurno(turno);
+        turmaAtual.setAnoLetivo(anoLetivo);
+
+        repository.updateTurma(turmaAtual, () -> {
+            runOnUiThread(() -> {
+                Toast.makeText(this, "✅ Turma atualizada com sucesso!", Toast.LENGTH_SHORT).show();
+                finish();
             });
+        });
+    }
+
+    // ==================== MÉTODO PARA VERIFICAR SE HÁ DADOS PREENCHIDOS ====================
+    private boolean temDadosPreenchidos() {
+        return !etNome.getText().toString().trim().isEmpty()
+                || !etTurno.getText().toString().trim().isEmpty()
+                || !etAnoLetivo.getText().toString().trim().isEmpty();
+    }
+
+    // ==================== CONFIRMAR SAÍDA ====================
+    private void confirmarSaida() {
+        if (temDadosPreenchidos()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Descartar alterações?")
+                    .setMessage("Os dados preenchidos serão perdidos.")
+                    .setPositiveButton("Descartar", (d, w) -> finish())
+                    .setNegativeButton("Continuar editando", null)
+                    .show();
+        } else {
+            finish();
         }
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            finish();
+            confirmarSaida();
             return true;
         }
         return super.onOptionsItemSelected(item);

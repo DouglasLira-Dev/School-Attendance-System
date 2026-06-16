@@ -3,12 +3,10 @@ package com.professor.frequenciaescolar.ui.chamada;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SwitchCompat;
-import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputLayout;
@@ -96,7 +94,6 @@ public class ChamadaAdapter extends RecyclerView.Adapter<ChamadaAdapter.ChamadaV
     }
 
     public Map<Long, Boolean> getPresencas() {
-        // Salvar justificativas antes de retornar
         return presencas;
     }
 
@@ -110,13 +107,22 @@ public class ChamadaAdapter extends RecyclerView.Adapter<ChamadaAdapter.ChamadaV
         notifyDataSetChanged();
     }
 
+    // ==================== VERIFICAR SE ALGUM ALUNO FOI MARCADO ====================
+    public boolean algumAlunoMarcado() {
+        for (Map.Entry<Long, Boolean> entry : presencas.entrySet()) {
+            if (entry.getValue() != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static class ChamadaViewHolder extends RecyclerView.ViewHolder {
         TextView tvNome;
         TextView tvMatricula;
         SwitchCompat switchPresente;
         TextInputLayout tilJustificativa;
         com.google.android.material.textfield.TextInputEditText etJustificativa;
-        CardView cardView;
 
         ChamadaViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -125,7 +131,6 @@ public class ChamadaAdapter extends RecyclerView.Adapter<ChamadaAdapter.ChamadaV
             switchPresente = itemView.findViewById(R.id.switchPresente);
             tilJustificativa = itemView.findViewById(R.id.tilJustificativa);
             etJustificativa = itemView.findViewById(R.id.etJustificativa);
-            cardView = (CardView) itemView;
         }
     }
 }

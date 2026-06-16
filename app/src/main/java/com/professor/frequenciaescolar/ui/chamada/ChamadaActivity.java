@@ -258,6 +258,11 @@ public class ChamadaActivity extends AppCompatActivity {
             return;
         }
 
+        if (!adapter.algumAlunoMarcado()) {
+            Toast.makeText(this, "Marque a presença de pelo menos um aluno antes de salvar", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         // Verificar permissão de localização
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -332,13 +337,16 @@ public class ChamadaActivity extends AppCompatActivity {
                         longitude = networkLocation.getLongitude();
                     } else {
                         // Localização padrão se não conseguir obter
-                        latitude = -23.5505;
-                        longitude = -46.6333;
+                        latitude = 0;
+                        longitude = 0;
                     }
                 }
             } catch (Exception e) {
-                latitude = -23.5505;
-                longitude = -46.6333;
+                latitude = 0;
+                longitude = 0;
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Não foi possível obter localização. Chamada salva sem GPS.", Toast.LENGTH_LONG).show()
+                );
             }
         }
     }

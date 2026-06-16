@@ -9,6 +9,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -58,7 +60,6 @@ public class AlunoFormActivity extends AppCompatActivity {
         spinnerTurma = findViewById(R.id.spinnerTurma);
         btnSalvar = findViewById(R.id.btnSalvar);
 
-        // Receber dados da turma vinda da lista de alunos
         turmaIdRecebida = getIntent().getLongExtra("turma_id", -1);
         turmaNomeRecebida = getIntent().getStringExtra("turma_nome");
 
@@ -71,6 +72,13 @@ public class AlunoFormActivity extends AppCompatActivity {
         }
 
         btnSalvar.setOnClickListener(v -> salvarAluno());
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                confirmarSaida();
+            }
+        });
     }
 
     private void carregarTurmas() {
@@ -88,7 +96,6 @@ public class AlunoFormActivity extends AppCompatActivity {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerTurma.setAdapter(adapter);
 
-                // Pré-selecionar a turma se veio da lista de alunos
                 if (turmaIdRecebida != -1) {
                     for (int i = 0; i < turmas.size(); i++) {
                         if (turmas.get(i).getId() == turmaIdRecebida) {
@@ -111,7 +118,6 @@ public class AlunoFormActivity extends AppCompatActivity {
                     etResponsavel.setText(aluno.getResponsavel());
                     etTelefone.setText(aluno.getTelefone());
 
-                    // Carregar turma atual do aluno
                     repository.getMatriculaAtivaByAluno(alunoId, matricula -> {
                         if (matricula != null) {
                             for (int i = 0; i < turmas.size(); i++) {
@@ -144,62 +150,115 @@ public class AlunoFormActivity extends AppCompatActivity {
             return;
         }
 
+        if (turmaPosition == 0) {
+            Toast.makeText(this, "Selecione uma turma", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         long turmaId = turmas.get(turmaPosition - 1).getId();
         String dataAtual = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         if (alunoAtual == null) {
-            // Criar novo aluno
-            Aluno novoAluno = new Aluno(nome, matricula, responsavel, telefone, "ativo", true);
-            repository.insertAluno(novoAluno, () -> {
-                // Buscar o ID do aluno recém-criado
-                repository.getAlunoByMatricula(matricula, aluno -> {
-                    runOnUiThread(() -> {
-                        if (aluno != null) {
-                            Matricula matriculaObj = new Matricula(aluno.getId(), turmaId, dataAtual, "ativa");
-                            repository.insertMatricula(matriculaObj, () -> {
-                                runOnUiThread(() -> {
-                                    Toast.makeText(this, "Aluno salvo com sucesso!", Toast.LENGTH_SHORT).show();
-                                    finish();
-                                });
+            // Verificar matrícula duplicada
+            repository.getAlunoByMatricula(matricula, alunoExistente -> {
+                runOnUiThread(() -> {
+                    if (alunoExistente != null) {
+                        etMatricula.setError("⚠️ Matrícula já cadastrada para outro aluno");
+                        etMatricula.requestFocus();
+                        return;
+                    }
+
+                    Aluno novoAluno = new Aluno(nome, matricula, responsavel, telefone, "ativo", true);
+                    repository.insertAluno(novoAluno, () -> {
+                        repository.getAlunoByMatricula(matricula, aluno -> {
+                            runOnUiThread(() -> {
+                                if (aluno != null) {
+                                    Matricula matriculaObj = new Matricula(aluno.getId(), turmaId, dataAtual, "ativa");
+                                    repository.insertMatricula(matriculaObj, () -> {
+                                        runOnUiThread(() -> {
+                                            Toast.makeText(this, "✅ Aluno salvo com sucesso!", Toast.LENGTH_SHORT).show();
+                                            finish();
+                                        });
+                                    });
+                                }
                             });
-                        }
+                        });
                     });
                 });
             });
         } else {
             // Atualizar aluno existente
-            alunoAtual.setNome(nome);
-            alunoAtual.setMatricula(matricula);
-            alunoAtual.setResponsavel(responsavel);
-            alunoAtual.setTelefone(telefone);
-            repository.updateAluno(alunoAtual, () -> {
-                // Atualizar matrícula se necessário
-                repository.getMatriculaAtivaByAluno(alunoAtual.getId(), matriculaAtual -> {
-                    if (matriculaAtual != null && matriculaAtual.getTurmaId() != turmaId) {
-                        repository.desativarMatriculaAtiva(alunoAtual.getId(), "transferida", () -> {
-                            Matricula novaMatricula = new Matricula(alunoAtual.getId(), turmaId, dataAtual, "ativa");
-                            repository.insertMatricula(novaMatricula, () -> {
-                                runOnUiThread(() -> {
-                                    Toast.makeText(this, "Aluno atualizado com sucesso!", Toast.LENGTH_SHORT).show();
-                                    finish();
-                                });
+            if (!alunoAtual.getMatricula().equals(matricula)) {
+                repository.getAlunoByMatricula(matricula, alunoExistente -> {
+                    runOnUiThread(() -> {
+                        if (alunoExistente != null && alunoExistente.getId() != alunoAtual.getId()) {
+                            etMatricula.setError("⚠️ Matrícula já cadastrada para outro aluno");
+                            etMatricula.requestFocus();
+                            return;
+                        }
+                        atualizarAluno(nome, matricula, responsavel, telefone, turmaId, dataAtual);
+                    });
+                });
+            } else {
+                atualizarAluno(nome, matricula, responsavel, telefone, turmaId, dataAtual);
+            }
+        }
+    }
+
+    private void atualizarAluno(String nome, String matricula, String responsavel, String telefone, long turmaId, String dataAtual) {
+        alunoAtual.setNome(nome);
+        alunoAtual.setMatricula(matricula);
+        alunoAtual.setResponsavel(responsavel);
+        alunoAtual.setTelefone(telefone);
+
+        repository.updateAluno(alunoAtual, () -> {
+            repository.getMatriculaAtivaByAluno(alunoAtual.getId(), matriculaAtual -> {
+                if (matriculaAtual != null && matriculaAtual.getTurmaId() != turmaId) {
+                    repository.desativarMatriculaAtiva(alunoAtual.getId(), "transferida", () -> {
+                        Matricula novaMatricula = new Matricula(alunoAtual.getId(), turmaId, dataAtual, "ativa");
+                        repository.insertMatricula(novaMatricula, () -> {
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "✅ Aluno atualizado com sucesso!", Toast.LENGTH_SHORT).show();
+                                finish();
                             });
                         });
-                    } else {
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, "Aluno atualizado com sucesso!", Toast.LENGTH_SHORT).show();
-                            finish();
-                        });
-                    }
-                });
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "✅ Aluno atualizado com sucesso!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+                }
             });
+        });
+    }
+
+    // ==================== MÉTODO PARA VERIFICAR SE HÁ DADOS PREENCHIDOS ====================
+    private boolean temDadosPreenchidos() {
+        return !etNome.getText().toString().trim().isEmpty()
+                || !etMatricula.getText().toString().trim().isEmpty()
+                || !etResponsavel.getText().toString().trim().isEmpty()
+                || !etTelefone.getText().toString().trim().isEmpty();
+    }
+
+    // ==================== CONFIRMAR SAÍDA ====================
+    private void confirmarSaida() {
+        if (temDadosPreenchidos()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Descartar alterações?")
+                    .setMessage("Os dados preenchidos serão perdidos.")
+                    .setPositiveButton("Descartar", (d, w) -> finish())
+                    .setNegativeButton("Continuar editando", null)
+                    .show();
+        } else {
+            finish();
         }
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            finish();
+            confirmarSaida();
             return true;
         }
         return super.onOptionsItemSelected(item);
