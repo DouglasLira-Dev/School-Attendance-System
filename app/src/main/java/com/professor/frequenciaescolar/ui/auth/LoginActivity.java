@@ -29,6 +29,7 @@ public class LoginActivity extends AppCompatActivity {
     private SenhaManager senhaManager;
     private BiometricPrompt biometricPrompt;
     private BiometricPrompt.PromptInfo promptInfo;
+    private TextView tvEsqueciSenha;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +55,12 @@ public class LoginActivity extends AppCompatActivity {
 
         // Verificar se biometria está disponível
         verificarDisponibilidadeBiometria();
+
+        tvEsqueciSenha = findViewById(R.id.tvEsqueciSenha);
+        tvEsqueciSenha.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, EsqueciSenhaActivity.class);
+            startActivity(intent);
+        });
 
         btnEntrar.setOnClickListener(v -> autenticarSenha());
         btnBiometria.setOnClickListener(v -> autenticarBiometria());

@@ -58,6 +58,11 @@
             android:name=".ui.auth.ConfigSenhaActivity"
             android:exported="false" />
 
+        <!-- Tela de Esqueci a Senha -->
+        <activity
+            android:name=".ui.auth.EsqueciSenhaActivity"
+            android:exported="false" />
+
         <!-- Tela de Turmas -->
         <activity
             android:name=".ui.turmas.TurmaListActivity"

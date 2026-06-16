@@ -32,7 +32,8 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Senha">
+        android:hint="Senha"
+        app:endIconMode="password_toggle">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etSenha"
@@ -42,6 +43,21 @@
             android:maxLines="1" />
 
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- ==================== LINK ESQUECI A SENHA ==================== -->
+    <TextView
+        android:id="@+id/tvEsqueciSenha"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Esqueci minha senha"
+        android:textSize="14sp"
+        android:textColor="@android:color/holo_blue_dark"
+        android:gravity="end"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?android:attr/selectableItemBackground" />
 
     <Button
         android:id="@+id/btnEntrar"
