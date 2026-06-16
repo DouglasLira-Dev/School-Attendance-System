@@ -1,9 +1,12 @@
 package com.professor.frequenciaescolar.ui.backup;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.MenuItem;
@@ -39,11 +42,13 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.utils.BackupManager;
+import com.professor.frequenciaescolar.utils.BackupReceiver;
 import com.professor.frequenciaescolar.workers.BackupWorker;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -131,6 +136,8 @@ public class BackupRestoreActivity extends AppCompatActivity {
         });
 
         atualizarListaBackups();
+        // Iniciar backup automático se ativado
+        configurarBackupAutomatico();
     }
 
     private void carregarConfiguracoes() {
@@ -146,32 +153,53 @@ public class BackupRestoreActivity extends AppCompatActivity {
             btnConectarDrive.setText("Desconectar");
         }
     }
-
     private void salvarConfiguracoes() {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean("backup_auto", switchBackupAuto.isChecked());
         editor.putInt("frequencia_backup", spinnerFrequencia.getSelectedItemPosition());
         editor.apply();
     }
+    private void configurarBackupAutomatico() {
+        SharedPreferences prefs = getSharedPreferences("backup_prefs", MODE_PRIVATE);
+        boolean backupAuto = prefs.getBoolean("backup_auto", true);
+
+        if (backupAuto) {
+            agendarBackupAutomatico();
+        }
+    }
 
     private void agendarBackupAutomatico() {
-        long interval;
-        int posicao = spinnerFrequencia.getSelectedItemPosition();
-        switch (posicao) {
-            case 0: interval = TimeUnit.DAYS.toMillis(1); break;
-            case 1: interval = TimeUnit.DAYS.toMillis(7); break;
-            default: interval = TimeUnit.DAYS.toMillis(30); break;
+        // Backup diário às 02:00 da manhã
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 2);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
 
-        PeriodicWorkRequest backupWork = new PeriodicWorkRequest.Builder(
-                BackupWorker.class, interval, TimeUnit.MILLISECONDS)
-                .build();
+        Intent intent = new Intent(this, BackupReceiver.class);
+        intent.setAction("BACKUP_AUTO");
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        WorkManager.getInstance(this).enqueue(backupWork);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(), pendingIntent);
+        } else {
+            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+        }
     }
 
     private void cancelarBackupAutomatico() {
-        WorkManager.getInstance(this).cancelAllWork();
+        Intent intent = new Intent(this, BackupReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmManager.cancel(pendingIntent);
     }
 
     private void fazerBackupManual() {

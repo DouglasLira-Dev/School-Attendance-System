@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId "com.professor.frequenciaescolar"
-        minSdk 24
+        minSdk 26
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -27,12 +27,15 @@ android {
             }
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+        // ==================== ADICIONAR ESTA LINHA ====================
+        coreLibraryDesugaringEnabled true
     }
+
     packagingOptions {
-        // Resolve conflitos de arquivos 'META-INF/DEPENDENCIES' e outros comuns
         pickFirsts += "META-INF/DEPENDENCIES"
         pickFirsts += "META-INF/LICENSE"
         pickFirsts += "META-INF/LICENSE.txt"
@@ -68,24 +71,24 @@ dependencies {
     // Gráficos
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 
-    // Google Drive API (completas)
+    // Google Drive API
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
-
-    // Google API Client
     implementation 'com.google.http-client:google-http-client-gson:1.43.3'
     implementation 'com.google.http-client:google-http-client-android:1.43.3'
     implementation 'com.google.api-client:google-api-client:2.2.0'
     implementation 'com.google.api-client:google-api-client-android:2.2.0'
-
-    // Google Drive Services
     implementation 'com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0'
 
-    // WorkManager (para Backup Automático)
+    // WorkManager (Backup Automático)
     implementation 'androidx.work:work-runtime:2.9.0'
+
     // Swipe to Refresh
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
     // Apache POI para Excel (XLSX)
     implementation 'org.apache.poi:poi:5.2.5'
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
+    // Desugaring para compatibilidade com versões antigas
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }

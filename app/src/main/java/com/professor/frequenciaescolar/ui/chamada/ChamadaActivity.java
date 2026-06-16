@@ -59,8 +59,8 @@ public class ChamadaActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private double latitude = 0;
     private double longitude = 0;
-
     private static final int LOCATION_PERMISSION_REQUEST = 100;
+    private Button btnMarcarTodos, btnDesmarcarTodos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +80,8 @@ public class ChamadaActivity extends AppCompatActivity {
         tvEmpty = findViewById(R.id.tvEmpty);
         btnSalvar = findViewById(R.id.btnSalvar);
         btnEditar = findViewById(R.id.btnEditar);
+        btnMarcarTodos = findViewById(R.id.btnMarcarTodos);
+        btnDesmarcarTodos = findViewById(R.id.btnDesmarcarTodos);
 
         // Configurar data atual
         String dataAtual = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
@@ -104,6 +106,8 @@ public class ChamadaActivity extends AppCompatActivity {
         // Configurar botões
         btnSalvar.setOnClickListener(v -> salvarChamada(false));
         btnEditar.setOnClickListener(v -> salvarChamada(true));
+        btnMarcarTodos.setOnClickListener(v -> marcarTodosPresentes());
+        btnDesmarcarTodos.setOnClickListener(v -> desmarcarTodos());
     }
 
     private void carregarTurmas() {
@@ -361,5 +365,37 @@ public class ChamadaActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void marcarTodosPresentes() {
+        if (alunos.isEmpty()) {
+            Toast.makeText(this, "Nenhum aluno para marcar", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<Long, Boolean> presencas = new HashMap<>();
+        for (Aluno aluno : alunos) {
+            presencas.put(aluno.getId(), true);
+            adapter.getJustificativas().put(aluno.getId(), "");
+        }
+        adapter.carregarDadosExistentes(presencas, new HashMap<>());
+        adapter.notifyDataSetChanged();
+
+        Toast.makeText(this, "✅ Todos os alunos marcados como presentes!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void desmarcarTodos() {
+        if (alunos.isEmpty()) {
+            Toast.makeText(this, "Nenhum aluno para desmarcar", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<Long, Boolean> presencas = new HashMap<>();
+        for (Aluno aluno : alunos) {
+            presencas.put(aluno.getId(), false);
+        }
+        adapter.carregarDadosExistentes(presencas, adapter.getJustificativas());
+
+        Toast.makeText(this, "❌ Todos os alunos desmarcados!", Toast.LENGTH_SHORT).show();
     }
 }
