@@ -103,4 +103,13 @@ public class BarChartFragment extends Fragment {
 
         barChart.invalidate();
     }
+    public void atualizarDados(List<String> novosMeses, List<Float> novosValores, float novaMedia) {
+        this.meses = novosMeses;
+        this.valores = novosValores;
+        this.media = novaMedia;
+
+        // Atualizar o gráfico
+        carregarDados();
+        tvMedia.setText(String.format("Média da Turma: %.1f%%", media));
+    }
 }

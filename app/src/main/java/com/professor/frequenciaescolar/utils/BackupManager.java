@@ -43,11 +43,10 @@ public class BackupManager {
         File currentDb = context.getDatabasePath(DATABASE_NAME);
 
         if (currentDb.exists()) {
-            FileChannel source = new FileInputStream(currentDb).getChannel();
-            FileChannel destination = new FileOutputStream(backupFile).getChannel();
-            destination.transferFrom(source, 0, source.size());
-            source.close();
-            destination.close();
+            try (FileChannel source = new FileInputStream(currentDb).getChannel();
+                 FileChannel destination = new FileOutputStream(backupFile).getChannel()) {
+                destination.transferFrom(source, 0, source.size());
+            }
             return backupFile;
         }
 
@@ -58,15 +57,12 @@ public class BackupManager {
     public boolean restaurarBackup(File backupFile) throws IOException {
         File currentDb = context.getDatabasePath(DATABASE_NAME);
 
-        // Fechar conexão com o banco
         AppDatabase.destroyInstance();
 
-        // Copiar backup para o local do banco
-        FileChannel source = new FileInputStream(backupFile).getChannel();
-        FileChannel destination = new FileOutputStream(currentDb).getChannel();
-        destination.transferFrom(source, 0, source.size());
-        source.close();
-        destination.close();
+        try (FileChannel source = new FileInputStream(backupFile).getChannel();
+             FileChannel destination = new FileOutputStream(currentDb).getChannel()) {
+            destination.transferFrom(source, 0, source.size());
+        }
 
         return true;
     }

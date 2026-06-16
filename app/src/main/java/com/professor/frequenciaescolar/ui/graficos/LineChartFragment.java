@@ -110,4 +110,13 @@ public class LineChartFragment extends Fragment {
 
         lineChart.invalidate();
     }
+    public void atualizarDados(List<String> novosMeses, List<Float> novosValores, String novoNome) {
+        this.meses = novosMeses;
+        this.valores = novosValores;
+        this.alunoNome = novoNome;
+
+        // Atualizar o gráfico
+        carregarDados();
+        tvInfo.setText(String.format("Evolução da frequência de %s por mês", alunoNome));
+    }
 }
