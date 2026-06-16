@@ -53,6 +53,7 @@
                         android:textSize="14sp"
                         android:layout_marginBottom="12dp" />
 
+                     <!-- CHECKBOX -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -62,51 +63,57 @@
                         <CheckBox
                             android:id="@+id/chkDomingo"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Dom"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Dom"
+                        android:textSize="12sp" />
 
                         <CheckBox
                             android:id="@+id/chkSegunda"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Seg"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Seg"
+                        android:textSize="12sp" />
 
                         <CheckBox
                             android:id="@+id/chkTerca"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Ter"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ter"
+                        android:textSize="12sp" />
 
                         <CheckBox
                             android:id="@+id/chkQuarta"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Qua"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Qua"
+                        android:textSize="12sp" />
 
                         <CheckBox
                             android:id="@+id/chkQuinta"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Qui"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Qui"
+                        android:textSize="12sp" />
 
                         <CheckBox
                             android:id="@+id/chkSexta"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Sex"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Sex"
+                        android:textSize="12sp" />
 
                         <CheckBox
                             android:id="@+id/chkSabado"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Sáb"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content"
+                        android:text="Sáb"
+                        android:textSize="12sp" />
 
                     </LinearLayout>
 

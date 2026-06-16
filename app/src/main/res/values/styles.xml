@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Estilo APENAS para o menu popup dos 3 pontos -->
+    <style name="MenuPopupStyle">
+        <item name="android:popupBackground">#2D2D2D</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+</resources>

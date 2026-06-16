@@ -9,7 +9,6 @@ import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
-import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.ui.chamada.ChamadaActivity;
 import com.professor.frequenciaescolar.ui.relatorios.RelatorioDashboardActivity;
 
@@ -64,7 +63,7 @@ public class NotificationHelper {
     }
 
     // Alerta de faltas consecutivas
-    public void notificarFaltasConsecutivas(String alunoNome, int faltasConsecutivas) {
+    public void notificarFaltasConsecutivas(String alunoNome, int faltasConsecutivas, String nome) {
         Intent intent = new Intent(context, RelatorioDashboardActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE

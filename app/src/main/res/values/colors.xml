@@ -32,4 +32,10 @@
     <color name="btn_warning">#FFCC00</color>
     <color name="btn_danger">#FF0000</color>
     <color name="btn_info">#3399FF</color>
+
+    <!-- Cores para o menu popup -->
+    <color name="popup_menu_background">#363636</color>   <!-- Fundo escuro -->
+    <color name="popup_menu_text">#FFFFFF</color>        <!-- Texto branco -->
+    <color name="popup_background">#2D2D2D</color>
+    <color name="popup_text">#FFFFFF</color>
 </resources>
