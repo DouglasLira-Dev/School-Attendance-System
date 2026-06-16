@@ -15,6 +15,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.professor.frequenciaescolar.R;
@@ -40,6 +41,7 @@ public class AlunoListActivity extends AppCompatActivity {
 
     private long turmaId;
     private String turmaNome;
+    private List<Aluno> alunos = new ArrayList<>();
     private Map<Long, Aluno> alunosMap = new HashMap<>();  // Usar Map para evitar duplicação
     private List<Aluno> alunosFiltrados = new ArrayList<>();
 
@@ -246,6 +248,31 @@ public class AlunoListActivity extends AppCompatActivity {
             intent.putExtra("turma_id", turmaId);
             intent.putExtra("turma_nome", turmaNome);
             startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_transferir) {
+            // Usar a lista que está sendo exibida (filtrada ou completa)
+            List<Aluno> listaParaTransferir = alunosFiltrados.isEmpty() ? new ArrayList<>(alunosMap.values()) : alunosFiltrados;
+
+            if (listaParaTransferir.isEmpty()) {
+                Toast.makeText(this, "Nenhum aluno para transferir", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+
+            String[] nomesAlunos = new String[listaParaTransferir.size()];
+            for (int i = 0; i < listaParaTransferir.size(); i++) {
+                nomesAlunos[i] = listaParaTransferir.get(i).getNome() + " - " + listaParaTransferir.get(i).getMatricula();
+            }
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Selecione o aluno")
+                    .setItems(nomesAlunos, (dialog, which) -> {
+                        Aluno alunoSelecionado = listaParaTransferir.get(which);
+                        Intent intent = new Intent(AlunoListActivity.this, MatriculaActivity.class);
+                        intent.putExtra("aluno_id", alunoSelecionado.getId());
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
             return true;
         } else if (itemId == android.R.id.home) {
             finish();
