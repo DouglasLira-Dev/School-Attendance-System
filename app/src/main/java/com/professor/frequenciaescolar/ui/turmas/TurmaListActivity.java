@@ -1,7 +1,10 @@
 package com.professor.frequenciaescolar.ui.turmas;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -11,6 +14,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.os.Environment;
+import android.net.Uri;
+import androidx.core.content.FileProvider;
 
 
 import androidx.appcompat.app.AlertDialog;
@@ -40,11 +46,28 @@ import com.professor.frequenciaescolar.utils.ConfiguracoesManager;
 import com.professor.frequenciaescolar.utils.NotificationHelper;
 import com.professor.frequenciaescolar.utils.NotificationScheduler;
 import com.professor.frequenciaescolar.data.database.AppDatabase;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 public class TurmaListActivity extends AppCompatActivity {
 
@@ -267,15 +290,177 @@ public class TurmaListActivity extends AppCompatActivity {
     }
 
     private void gerarPDFTurma(Turma turma, List<AlunoExport> alunos, int totalDias, String dataInicio, String dataFim) {
-        // Implementar geração de PDF da turma
-        runOnUiThread(() -> Toast.makeText(this, "PDF gerado com sucesso!", Toast.LENGTH_SHORT).show());
+        try {
+            // Criar nome do arquivo
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String fileName = "relatorio_turma_" + turma.getNome().replace(" ", "_") + "_" + timestamp + ".pdf";
+
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs();
+            }
+
+            File pdfFile = new File(downloadsDir, fileName);
+            PdfWriter writer = new PdfWriter(new FileOutputStream(pdfFile));
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc, PageSize.A4);
+            document.setMargins(50, 50, 50, 50);
+
+            // Título
+            PdfFont boldFont = PdfFontFactory.createFont();
+            Paragraph titulo = new Paragraph("RELATÓRIO DE FREQUÊNCIA - TURMA")
+                    .setFont(boldFont)
+                    .setFontSize(18)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(titulo);
+
+            // Informações da Turma
+            Table infoTable = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
+            infoTable.setWidth(UnitValue.createPercentValue(100));
+            infoTable.setMarginBottom(20);
+
+            adicionarLinhaTabela(infoTable, "Turma:", turma.getNome() + " - " + turma.getTurno());
+            adicionarLinhaTabela(infoTable, "Período:", dataInicio + " a " + dataFim);
+            adicionarLinhaTabela(infoTable, "Total de Dias Letivos:", String.valueOf(totalDias));
+            adicionarLinhaTabela(infoTable, "Total de Alunos:", String.valueOf(alunos.size()));
+            adicionarLinhaTabela(infoTable, "Data de Geração:", new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
+
+            document.add(infoTable);
+
+            // Tabela de Alunos
+            Paragraph tabelaTitle = new Paragraph("LISTA DE ALUNOS")
+                    .setFont(boldFont)
+                    .setFontSize(14)
+                    .setMarginTop(10)
+                    .setMarginBottom(10);
+            document.add(tabelaTitle);
+
+            Table alunoTable = new Table(UnitValue.createPercentArray(new float[]{5, 30, 20, 15, 15, 15}));
+            alunoTable.setWidth(UnitValue.createPercentValue(100));
+            alunoTable.setMarginBottom(20);
+
+            // Cabeçalho
+            adicionarCelulaCabecalho(alunoTable, "Nº");
+            adicionarCelulaCabecalho(alunoTable, "Nome");
+            adicionarCelulaCabecalho(alunoTable, "Matrícula");
+            adicionarCelulaCabecalho(alunoTable, "Presenças");
+            adicionarCelulaCabecalho(alunoTable, "Faltas");
+            adicionarCelulaCabecalho(alunoTable, "Frequência");
+
+            // Dados
+            int count = 1;
+            for (AlunoExport ae : alunos) {
+                alunoTable.addCell(new Cell().add(new Paragraph(String.valueOf(count++))));
+                alunoTable.addCell(new Cell().add(new Paragraph(ae.nome)));
+                alunoTable.addCell(new Cell().add(new Paragraph(ae.matricula)));
+                alunoTable.addCell(new Cell().add(new Paragraph(String.valueOf(ae.presencas))));
+                alunoTable.addCell(new Cell().add(new Paragraph(String.valueOf(ae.faltas))));
+                Cell freqCell = new Cell().add(new Paragraph(String.format("%.1f%%", ae.frequencia)));
+                if (ae.frequencia < 75) {
+                    freqCell.setBackgroundColor(ColorConstants.RED);
+                    freqCell.setFontColor(ColorConstants.WHITE);
+                }
+                alunoTable.addCell(freqCell);
+            }
+
+            document.add(alunoTable);
+
+            // Rodapé
+            Paragraph footer = new Paragraph("Documento gerado pelo Sistema de Frequência Escolar")
+                    .setFontSize(8)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(30);
+            document.add(footer);
+
+            document.close();
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, "PDF gerado: " + pdfFile.getName(), Toast.LENGTH_LONG).show();
+                compartilharArquivo(pdfFile, "application/pdf");
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            runOnUiThread(() -> Toast.makeText(this, "Erro ao gerar PDF: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        }
     }
 
     private void gerarCSVTurma(Turma turma, List<AlunoExport> alunos, int totalDias, String dataInicio, String dataFim) {
-        // Implementar geração de CSV da turma
-        runOnUiThread(() -> Toast.makeText(this, "CSV gerado com sucesso!", Toast.LENGTH_SHORT).show());
+        try {
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String fileName = "relatorio_turma_" + turma.getNome().replace(" ", "_") + "_" + timestamp + ".csv";
+
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs();
+            }
+
+            File csvFile = new File(downloadsDir, fileName);
+            FileOutputStream fos = new FileOutputStream(csvFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
+
+            StringBuilder sb = new StringBuilder();
+
+            // Cabeçalho
+            sb.append("RELATÓRIO DE FREQUÊNCIA - TURMA\n");
+            sb.append("Turma: ").append(turma.getNome()).append(" - ").append(turma.getTurno()).append("\n");
+            sb.append("Período: ").append(dataInicio).append(" a ").append(dataFim).append("\n");
+            sb.append("Total de Dias Letivos: ").append(totalDias).append("\n\n");
+
+            // Colunas
+            sb.append("Nº;Nome;Matrícula;Presenças;Faltas;Frequência\n");
+
+            // Dados
+            int count = 1;
+            for (AlunoExport ae : alunos) {
+                sb.append(count++).append(";")
+                        .append(ae.nome).append(";")
+                        .append(ae.matricula).append(";")
+                        .append(ae.presencas).append(";")
+                        .append(ae.faltas).append(";")
+                        .append(String.format("%.1f%%", ae.frequencia)).append("\n");
+            }
+
+            osw.write(sb.toString());
+            osw.flush();
+            osw.close();
+            fos.close();
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, "CSV gerado: " + csvFile.getName(), Toast.LENGTH_LONG).show();
+                compartilharArquivo(csvFile, "text/csv");
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            runOnUiThread(() -> Toast.makeText(this, "Erro ao gerar CSV: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        }
     }
 
+    private void adicionarLinhaTabela(Table table, String label, String valor) {
+        table.addCell(new Cell().add(new Paragraph(label).setBold()));
+        table.addCell(new Cell().add(new Paragraph(valor)));
+    }
+
+    private void adicionarCelulaCabecalho(Table table, String texto) {
+        Cell cell = new Cell().add(new Paragraph(texto).setBold());
+        cell.setBackgroundColor(ColorConstants.LIGHT_GRAY);
+        cell.setTextAlignment(TextAlignment.CENTER);
+        table.addCell(cell);
+    }
+
+    private void compartilharArquivo(File file, String tipo) {
+        Uri uri = FileProvider.getUriForFile(this,
+                getPackageName() + ".provider", file);
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType(tipo);
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        startActivity(Intent.createChooser(shareIntent, "Compartilhar Relatório"));
+    }
     private String converterData(String data) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -299,6 +484,12 @@ public class TurmaListActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_turma_list, menu);
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            SpannableString s = new SpannableString(item.getTitle());
+            s.setSpan(new ForegroundColorSpan(Color.WHITE), 0, s.length(), 0);
+            item.setTitle(s);
+        }
         return true;
     }
 

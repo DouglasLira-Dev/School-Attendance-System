@@ -1,5 +1,6 @@
 package com.professor.frequenciaescolar.ui.alunos;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -37,6 +38,7 @@ public class AlunoListActivity extends AppCompatActivity {
     private Map<Long, Aluno> alunosMap = new HashMap<>();
     private SwipeRefreshLayout swipeRefresh;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,10 +49,12 @@ public class AlunoListActivity extends AppCompatActivity {
 
         // Configurar Swipe to Refresh
         swipeRefresh = findViewById(R.id.swipeRefresh);
-        swipeRefresh.setOnRefreshListener(() -> {
-            carregarAlunos();  // Corrigido: carregarAlunos, não carregarTurmas
-            swipeRefresh.setRefreshing(false);
-        });
+        if (swipeRefresh != null) {
+            swipeRefresh.setOnRefreshListener(() -> {
+                carregarAlunos();  // Corrigido: carregarAlunos, não carregarTurmas
+                swipeRefresh.setRefreshing(false);
+            });
+        }
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);

@@ -33,6 +33,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.Scope;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
@@ -299,8 +300,32 @@ public class BackupRestoreActivity extends AppCompatActivity {
     }
 
     private void enviarParaDrive(File backupFile) {
-        // Implementar envio para Google Drive
-        Toast.makeText(this, "Backup enviado para o Google Drive", Toast.LENGTH_SHORT).show();
+        if (driveService == null) {
+            Toast.makeText(this, "Conecte-se ao Google Drive primeiro", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Criar metadata do arquivo
+            com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
+            fileMetadata.setName(backupFile.getName());
+            fileMetadata.setParents(Collections.singletonList("root"));
+
+            // Upload do arquivo
+            java.io.File filePath = new java.io.File(backupFile.getPath());
+            FileContent mediaContent = new FileContent("application/octet-stream", filePath);
+
+            com.google.api.services.drive.model.File uploadedFile = driveService.files()
+                    .create(fileMetadata, mediaContent)
+                    .setFields("id")
+                    .execute();
+
+            Toast.makeText(this, "Backup enviado para o Google Drive!", Toast.LENGTH_LONG).show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Erro ao enviar para Drive: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void atualizarListaBackups() {
