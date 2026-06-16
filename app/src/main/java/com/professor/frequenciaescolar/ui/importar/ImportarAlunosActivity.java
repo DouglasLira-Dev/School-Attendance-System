@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -16,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,10 +29,12 @@ import com.professor.frequenciaescolar.data.entities.Turma;
 import com.professor.frequenciaescolar.data.repository.FrequenciaRepository;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -264,19 +268,29 @@ public class ImportarAlunosActivity extends AppCompatActivity {
     private void baixarModeloCSV() {
         try {
             String fileName = "modelo_importacao_alunos.csv";
-            FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
-            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs();
+            }
 
-            osw.write("Nome,Matrícula,Responsável,Telefone,Turma\n");
-            osw.write("João Silva,20260001,Maria Silva,(11)99999-9999,1º Ano A\n");
-            osw.write("Maria Santos,20260002,José Santos,(11)88888-8888,1º Ano A\n");
-            osw.write("Pedro Oliveira,20260003,Ana Oliveira,(11)77777-7777,2º Ano B\n");
+            File modeloFile = new File(downloadsDir, fileName);
 
-            osw.flush();
-            osw.close();
-            fos.close();
+            try (FileOutputStream fos = new FileOutputStream(modeloFile);
+                 OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+                osw.write("Nome,Matrícula,Responsável,Telefone,Turma\n");
+                osw.write("João Silva,20260001,Maria Silva,(11)99999-9999,1º Ano A\n");
+                osw.write("Maria Santos,20260002,José Santos,(11)88888-8888,1º Ano A\n");
+                osw.write("Pedro Oliveira,20260003,Ana Oliveira,(11)77777-7777,2º Ano B\n");
+            }
 
-            Toast.makeText(this, "Modelo CSV salvo!\nLocalize o arquivo na pasta interna do app.", Toast.LENGTH_LONG).show();
+            // Compartilhar direto para o usuário poder salvar onde quiser:
+            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".provider", modeloFile);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/csv");
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(intent, "Salvar modelo CSV"));
+
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Erro ao gerar modelo: " + e.getMessage(), Toast.LENGTH_LONG).show();

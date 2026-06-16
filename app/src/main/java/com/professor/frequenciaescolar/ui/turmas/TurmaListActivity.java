@@ -77,13 +77,13 @@ public class TurmaListActivity extends AppCompatActivity {
     private TurmaAdapter adapter;
     private FrequenciaRepository repository;
     private long turmaSelecionadaId = -1;
-    private AppDatabase database;
     private SwipeRefreshLayout swipeRefresh;
     private LinearLayout layoutDetalhes;
     private RecyclerView rvAlunosTablet;
     private TextView tvTurmaSelecionada;
     private AlunoAdapter alunoAdapter;
     private boolean carregouPelaVez = false;
+    private AppDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -292,40 +292,56 @@ public class TurmaListActivity extends AppCompatActivity {
 
         new Thread(() -> {
             try {
+                //  Buscar turma diretamente — sem callback aninhado
                 Turma turma = database.turmaDao().getTurmaById(turmaSelecionadaId);
-                List<Matricula> matriculas = database.matriculaDao().getAlunosMatriculadosNaTurma(turmaSelecionadaId);
-
-                if (matriculas == null || matriculas.isEmpty()) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "⚠️ Esta turma não possui alunos para exportar", Toast.LENGTH_LONG).show();
-                    });
+                if (turma == null) {
+                    runOnUiThread(() -> Toast.makeText(this, "Turma não encontrada", Toast.LENGTH_LONG).show());
                     return;
                 }
 
+                //  Buscar matrículas da turma
+                List<Matricula> matriculas = database.matriculaDao().getAlunosMatriculadosNaTurma(turmaSelecionadaId);
+                if (matriculas == null || matriculas.isEmpty()) {
+                    runOnUiThread(() -> Toast.makeText(this, "Esta turma não possui alunos para exportar", Toast.LENGTH_LONG).show());
+                    return;
+                }
+
+                //  Configurações de período
                 ConfiguracoesManager config = new ConfiguracoesManager(this);
                 String dataInicio = config.getDataInicio();
                 String dataFim = config.getDataFim();
-
                 String dataInicioConv = converterData(dataInicio);
                 String dataFimConv = converterData(dataFim);
 
+                //  Feriados e chamadas — síncronos, sem callbacks
                 List<Feriado> feriados = database.feriadoDao().getFeriadosNoPeriodo(dataInicioConv, dataFimConv);
-                List<Chamada> chamadas = database.chamadaDao().getChamadasPorPeriodo(dataInicioConv, dataFimConv);
+
+                //  Chamadas filtradas pela turma (não por todas as turmas)
+                List<Chamada> chamadas = database.chamadaDao().getChamadasPorTurma(turmaSelecionadaId);
+                // Filtrar pelo período manualmente
+                List<Chamada> chamadasNoPeriodo = new ArrayList<>();
+                for (Chamada c : chamadas) {
+                    if (c.getData().compareTo(dataInicioConv) >= 0 && c.getData().compareTo(dataFimConv) <= 0) {
+                        chamadasNoPeriodo.add(c);
+                    }
+                }
 
                 int totalDiasLetivos = config.calcularDiasLetivos(dataInicioConv, dataFimConv, feriados);
 
+                //  Montar lista de exportação — tudo síncrono, sem while/sleep
                 List<AlunoExport> alunosExport = new ArrayList<>();
 
                 for (Matricula m : matriculas) {
                     Aluno aluno = database.alunoDao().getAlunoById(m.getAlunoId());
                     if (aluno == null) continue;
 
+                    // Filtro: apenas ativos
                     if (incluirOpcao == 1 && !"ativo".equals(aluno.getStatus())) continue;
 
                     int presencas = 0;
                     int faltasJustificadas = 0;
 
-                    for (Chamada c : chamadas) {
+                    for (Chamada c : chamadasNoPeriodo) {
                         Presenca p = database.presencaDao().getPresencaByChamadaAndAluno(c.getId(), aluno.getId());
                         if (p != null) {
                             if (p.isPresente()) {
@@ -336,28 +352,32 @@ public class TurmaListActivity extends AppCompatActivity {
                         }
                     }
 
-                    int diasConsiderados = config.isDesconsiderarJustificadas() ?
-                            totalDiasLetivos - faltasJustificadas : totalDiasLetivos;
+                    int diasConsiderados = config.isDesconsiderarJustificadas()
+                            ? totalDiasLetivos - faltasJustificadas
+                            : totalDiasLetivos;
                     double frequencia = diasConsiderados > 0 ? (presencas * 100.0 / diasConsiderados) : 100;
 
+                    // Filtro: apenas alunos em risco (abaixo de 75%)
                     if (incluirOpcao == 2 && frequencia >= 75) continue;
 
                     AlunoExport ae = new AlunoExport();
                     ae.nome = aluno.getNome();
                     ae.matricula = aluno.getMatricula();
                     ae.presencas = presencas;
-                    ae.faltas = totalDiasLetivos - presencas;
+                    ae.faltas = chamadasNoPeriodo.size() - presencas;
                     ae.faltasJustificadas = faltasJustificadas;
                     ae.frequencia = frequencia;
                     alunosExport.add(ae);
                 }
 
+                //  Verificar se tem dados para exportar
                 if (alunosExport.isEmpty()) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "⚠️ Nenhum aluno atende aos critérios selecionados", Toast.LENGTH_LONG).show();
-                    });
+                    runOnUiThread(() -> Toast.makeText(this, "Nenhum aluno atende aos critérios selecionados", Toast.LENGTH_LONG).show());
                     return;
                 }
+
+                //  Gerar arquivo
+                if (isDestroyed() || isFinishing()) return;
 
                 if (formato == 0) {
                     gerarPDFTurma(turma, alunosExport, totalDiasLetivos, dataInicio, dataFim);
@@ -367,7 +387,7 @@ public class TurmaListActivity extends AppCompatActivity {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(this, "Erro ao gerar relatório: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();
     }
@@ -476,8 +496,6 @@ public class TurmaListActivity extends AppCompatActivity {
             }
 
             File csvFile = new File(downloadsDir, fileName);
-            FileOutputStream fos = new FileOutputStream(csvFile);
-            OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 
             StringBuilder sb = new StringBuilder();
 
@@ -498,10 +516,11 @@ public class TurmaListActivity extends AppCompatActivity {
                         .append(String.format("%.1f%%", ae.frequencia)).append("\n");
             }
 
-            osw.write(sb.toString());
-            osw.flush();
-            osw.close();
-            fos.close();
+            try (FileOutputStream fos = new FileOutputStream(csvFile);
+                 OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+                osw.write(sb.toString());
+                osw.flush();
+            }
 
             runOnUiThread(() -> {
                 String caminho = csvFile.getAbsolutePath();

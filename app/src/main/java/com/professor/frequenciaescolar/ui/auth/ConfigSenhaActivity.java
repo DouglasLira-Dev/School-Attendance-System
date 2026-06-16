@@ -42,8 +42,9 @@ public class ConfigSenhaActivity extends AppCompatActivity {
             return;
         }
 
-        if (senha.length() < 4) {
-            etSenha.setError("A senha deve ter pelo menos 4 caracteres");
+        String erroSenha = validarForcaSenha(senha);
+        if (erroSenha != null) {
+            etSenha.setError(erroSenha);
             return;
         }
 
@@ -58,5 +59,16 @@ public class ConfigSenhaActivity extends AppCompatActivity {
 
         startActivity(new Intent(this, LoginActivity.class));
         finish();
+    }
+    private String validarForcaSenha(String senha) {
+        if (senha.length() < 6) {
+            return "A senha deve ter pelo menos 6 caracteres";
+        }
+        boolean temNumero = senha.matches(".*[0-9].*");
+        boolean temLetra = senha.matches(".*[a-zA-Z].*");
+        if (!temNumero || !temLetra) {
+            return "A senha deve conter letras e números";
+        }
+        return null; // null = senha válida
     }
 }

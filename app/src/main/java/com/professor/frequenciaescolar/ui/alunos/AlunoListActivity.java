@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AlunoListActivity extends AppCompatActivity {
 
@@ -127,63 +128,38 @@ public class AlunoListActivity extends AppCompatActivity {
     // ==================== CARREGAR ALUNOS ====================
     private void carregarAlunos() {
         repository.getAlunosMatriculadosNaTurma(turmaId, matriculas -> {
-            runOnUiThread(() -> {
-                try {
-                    if (matriculas == null || matriculas.isEmpty()) {
-                        rvAlunos.setVisibility(View.GONE);
-                        tvEmpty.setVisibility(View.VISIBLE);
-                        tvEmpty.setText("Nenhum aluno matriculado nesta turma.\nClique no + para adicionar");
-                        adapter.setAlunos(new ArrayList<>());
-                        alunosMap.clear();
-                        return;
+            if (matriculas == null || matriculas.isEmpty()) {
+                runOnUiThread(() -> {
+                    rvAlunos.setVisibility(View.GONE);
+                    tvEmpty.setVisibility(View.VISIBLE);
+                    tvEmpty.setText("Nenhum aluno matriculado nesta turma.\nClique no + para adicionar");
+                    adapter.setAlunos(new ArrayList<>());
+                });
+                return;
+            }
+
+            // MELHORIA: coletar todos os alunos primeiro, depois atualizar a UI uma única vez
+            List<Aluno> alunosCarregados = new ArrayList<>();
+            AtomicInteger contador = new AtomicInteger(0);
+            int total = matriculas.size();
+
+            for (Matricula m : matriculas) {
+                repository.getAlunoById(m.getAlunoId(), aluno -> {
+                    if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                        synchronized (alunosCarregados) {
+                            alunosCarregados.add(aluno);
+                        }
                     }
-
-                    // Limpar o mapa antes de carregar
-                    alunosMap.clear();
-
-                    // Contador para saber quando todos os alunos foram carregados
-                    final int[] totalAlunos = {matriculas.size()};
-                    final int[] carregados = {0};
-
-                    for (Matricula m : matriculas) {
-                        repository.getAlunoById(m.getAlunoId(), aluno -> {
-                            runOnUiThread(() -> {
-                                if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                                    // Usar Map para evitar duplicação (mesmo ID substitui)
-                                    alunosMap.put(aluno.getId(), aluno);
-                                }
-                                carregados[0]++;
-
-                                // Só atualizar quando TODOS os alunos forem carregados
-                                if (carregados[0] == totalAlunos[0]) {
-                                    // Converter Map para List
-                                    List<Aluno> alunosList = new ArrayList<>(alunosMap.values());
-
-                                    if (alunosList.isEmpty()) {
-                                        rvAlunos.setVisibility(View.GONE);
-                                        tvEmpty.setVisibility(View.VISIBLE);
-                                        tvEmpty.setText("Nenhum aluno ativo nesta turma");
-                                        adapter.setAlunos(new ArrayList<>());
-                                    } else {
-                                        // Atualizar a lista filtrada
-                                        String textoBusca = etBusca != null ? etBusca.getText().toString() : "";
-                                        filtrarAlunos(textoBusca);
-                                    }
-                                }
-                            });
+                    // Só atualiza a UI quando TODOS os callbacks chegaram
+                    if (contador.incrementAndGet() == total) {
+                        runOnUiThread(() -> {
+                            alunos.clear();
+                            alunos.addAll(alunosCarregados);
+                            filtrarAlunos(etBusca.getText().toString());
                         });
                     }
-
-                    // Se não houver alunos para carregar (fallback)
-                    if (totalAlunos[0] == 0) {
-                        adapter.setAlunos(new ArrayList<>());
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(this, "Erro ao carregar alunos: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
+                });
+            }
         });
     }
 

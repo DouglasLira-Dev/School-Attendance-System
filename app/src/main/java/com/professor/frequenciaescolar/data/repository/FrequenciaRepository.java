@@ -5,6 +5,7 @@ import android.content.Context;
 import com.professor.frequenciaescolar.data.database.AppDatabase;
 import com.professor.frequenciaescolar.data.entities.Aluno;
 import com.professor.frequenciaescolar.data.entities.Chamada;
+import com.professor.frequenciaescolar.data.entities.Feriado;
 import com.professor.frequenciaescolar.data.entities.Matricula;
 import com.professor.frequenciaescolar.data.entities.MovimentacaoAluno;
 import com.professor.frequenciaescolar.data.entities.Presenca;
@@ -300,9 +301,14 @@ public class FrequenciaRepository {
             if (callback != null) callback.onDataFetched(turma);
         });
     }
-
+    // ==================== FERIADOS ====================
+    public void getFeriadosNoPeriodo(String dataInicio, String dataFim, OnDataFetched<List<Feriado>> callback) {
+        executar(() -> {
+            List<Feriado> feriados = database.feriadoDao().getFeriadosNoPeriodo(dataInicio, dataFim);
+            if (callback != null) callback.onDataFetched(feriados);
+        }, erro -> android.util.Log.e("Repository", "Erro ao buscar feriados no período: " + erro));
+    }
     // ==================== CALLBACK INTERFACE ====================
-
     public interface OnDataFetched<T> {
         void onDataFetched(T data);
     }

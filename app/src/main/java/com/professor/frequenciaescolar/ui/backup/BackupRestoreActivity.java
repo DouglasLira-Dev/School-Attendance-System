@@ -261,8 +261,12 @@ public class BackupRestoreActivity extends AppCompatActivity {
             inputStream.close();
 
             backupManager.restaurarBackup(tempFile);
-            Toast.makeText(this, "Backup restaurado com sucesso! Reinicie o app.", Toast.LENGTH_LONG).show();
-            tempFile.delete();
+            new AlertDialog.Builder(this)
+                    .setTitle("Backup Restaurado")
+                    .setMessage("Backup restaurado com sucesso! O app será reiniciado.")
+                    .setPositiveButton("OK", (d, w) -> reiniciarApp())
+                    .setCancelable(false)
+                    .show();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -273,7 +277,12 @@ public class BackupRestoreActivity extends AppCompatActivity {
     private void restaurarBackupLocal(File backupFile) {
         try {
             backupManager.restaurarBackup(backupFile);
-            Toast.makeText(this, "Backup restaurado com sucesso! Reinicie o app.", Toast.LENGTH_LONG).show();
+            new AlertDialog.Builder(this)
+                    .setTitle("Backup Restaurado")
+                    .setMessage("Backup restaurado com sucesso! O app será reiniciado.")
+                    .setPositiveButton("OK", (d, w) -> reiniciarApp())
+                    .setCancelable(false)
+                    .show();
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Erro ao restaurar: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -333,27 +342,37 @@ public class BackupRestoreActivity extends AppCompatActivity {
             return;
         }
 
-        try {
-            // Criar metadata do arquivo
-            com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
-            fileMetadata.setName(backupFile.getName());
-            fileMetadata.setParents(Collections.singletonList("root"));
+        // Mostrar progresso
+        Toast.makeText(this, "Enviando para o Google Drive...", Toast.LENGTH_SHORT).show();
+        btnBackupManual.setEnabled(false);
 
-            // Upload do arquivo
-            java.io.File filePath = new java.io.File(backupFile.getPath());
-            FileContent mediaContent = new FileContent("application/octet-stream", filePath);
+        // MOVER para thread de background:
+        new Thread(() -> {
+            try {
+                com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
+                fileMetadata.setName(backupFile.getName());
+                fileMetadata.setParents(Collections.singletonList("root"));
 
-            com.google.api.services.drive.model.File uploadedFile = driveService.files()
-                    .create(fileMetadata, mediaContent)
-                    .setFields("id")
-                    .execute();
+                FileContent mediaContent = new FileContent("application/octet-stream", backupFile);
 
-            Toast.makeText(this, "Backup enviado para o Google Drive!", Toast.LENGTH_LONG).show();
+                driveService.files()
+                        .create(fileMetadata, mediaContent)
+                        .setFields("id")
+                        .execute();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Erro ao enviar para Drive: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+                runOnUiThread(() -> {
+                    btnBackupManual.setEnabled(true);
+                    Toast.makeText(this, "Backup enviado para o Google Drive!", Toast.LENGTH_LONG).show();
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    btnBackupManual.setEnabled(true);
+                    Toast.makeText(this, "Erro ao enviar para Drive: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
     }
 
     private void atualizarListaBackups() {
@@ -366,6 +385,14 @@ public class BackupRestoreActivity extends AppCompatActivity {
             tvEmptyBackups.setVisibility(View.GONE);
             rvBackups.setVisibility(View.VISIBLE);
         }
+    }
+    private void reiniciarApp() {
+        Intent intent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+        }
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     @Override

@@ -61,6 +61,10 @@ public class ChamadaActivity extends AppCompatActivity {
     private double longitude = 0;
     private static final int LOCATION_PERMISSION_REQUEST = 100;
     private Button btnMarcarTodos, btnDesmarcarTodos;
+    private static final String KEY_PRESENCAS = "presencas_state";
+    private static final String KEY_TURMA_ID = "turma_id_state";
+    private boolean salvando = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +96,20 @@ public class ChamadaActivity extends AppCompatActivity {
         adapter = new ChamadaAdapter();
         rvAlunos.setLayoutManager(new LinearLayoutManager(this));
         rvAlunos.setAdapter(adapter);
+
+        // Restaurar estado salvo (rotação de tela)
+        if (savedInstanceState != null) {
+            turmaSelecionadaId = savedInstanceState.getLong(KEY_TURMA_ID, -1);
+            long[] ids = savedInstanceState.getLongArray("presenca_ids");
+            boolean[] valores = savedInstanceState.getBooleanArray("presenca_valores");
+            if (ids != null && valores != null) {
+                Map<Long, Boolean> presencasSalvas = new HashMap<>();
+                for (int i = 0; i < ids.length; i++) {
+                    presencasSalvas.put(ids[i], valores[i]);
+                }
+                adapter.carregarDadosExistentes(presencasSalvas, new HashMap<>());
+            }
+        }
 
         // Inicializar repository
         repository = FrequenciaRepository.getInstance(this);
@@ -151,46 +169,45 @@ public class ChamadaActivity extends AppCompatActivity {
 
     private void carregarAlunos() {
         repository.getAlunosMatriculadosNaTurma(turmaSelecionadaId, matriculas -> {
-            runOnUiThread(() -> {
-                if (matriculas == null || matriculas.isEmpty()) {
+            if (matriculas == null || matriculas.isEmpty()) {
+                runOnUiThread(() -> {
                     rvAlunos.setVisibility(View.GONE);
                     tvEmpty.setVisibility(View.VISIBLE);
-                    tvEmpty.setText("Nenhum aluno matriculado nesta turma");
+                    tvEmpty.setText("Nenhum aluno matriculado nesta turma.");
                     adapter.setAlunos(new ArrayList<>());
-                    return;
-                }
+                });
+                return;
+            }
 
-                alunos.clear();
-                List<Aluno> alunosTemp = new ArrayList<>();
-                AtomicInteger contador = new AtomicInteger(0);
-                int total = matriculas.size();
+            List<Aluno> alunosCarregados = new ArrayList<>();
+            AtomicInteger contador = new AtomicInteger(0);
+            int total = matriculas.size();
 
-                for (Matricula m : matriculas) {
-                    repository.getAlunoById(m.getAlunoId(), aluno -> {
+            for (Matricula m : matriculas) {
+                repository.getAlunoById(m.getAlunoId(), aluno -> {
+                    if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                        synchronized (alunosCarregados) {
+                            alunosCarregados.add(aluno);
+                        }
+                    }
+                    if (contador.incrementAndGet() == total) {
                         runOnUiThread(() -> {
-                            if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                                alunosTemp.add(aluno);
-                            }
-                            contador.incrementAndGet();
+                            alunos.clear();
+                            alunos.addAll(alunosCarregados);
+                            adapter.setAlunos(new ArrayList<>(alunos));
 
-                            if (contador.get() == total) {
-                                alunos.clear();
-                                alunos.addAll(alunosTemp);
-                                adapter.setAlunos(new ArrayList<>(alunos));
-
-                                if (alunos.isEmpty()) {
-                                    rvAlunos.setVisibility(View.GONE);
-                                    tvEmpty.setVisibility(View.VISIBLE);
-                                    tvEmpty.setText("Nenhum aluno ativo nesta turma");
-                                } else {
-                                    rvAlunos.setVisibility(View.VISIBLE);
-                                    tvEmpty.setVisibility(View.GONE);
-                                }
+                            if (alunos.isEmpty()) {
+                                rvAlunos.setVisibility(View.GONE);
+                                tvEmpty.setVisibility(View.VISIBLE);
+                                tvEmpty.setText("Nenhum aluno ativo nesta turma");
+                            } else {
+                                rvAlunos.setVisibility(View.VISIBLE);
+                                tvEmpty.setVisibility(View.GONE);
                             }
                         });
-                    });
-                }
-            });
+                    }
+                });
+            }
         });
     }
 
@@ -248,79 +265,103 @@ public class ChamadaActivity extends AppCompatActivity {
     }
 
     private void salvarChamada(boolean isEdicao) {
-        if (turmaSelecionadaId == -1) {
-            Toast.makeText(this, "Selecione uma turma", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // ==================== PROTEÇÃO CONTRA DUPLO CLIQUE ====================
+        if (salvando) return;
+        salvando = true;
+        btnSalvar.setEnabled(false);
+        btnEditar.setEnabled(false);
 
-        if (adapter.getItemCount() == 0) {
-            Toast.makeText(this, "Nenhum aluno para registrar", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        try {
+            if (turmaSelecionadaId == -1) {
+                Toast.makeText(this, "Selecione uma turma", Toast.LENGTH_SHORT).show();
+                resetarEstadoSalvamento();
+                return;
+            }
 
-        if (!adapter.algumAlunoMarcado()) {
-            Toast.makeText(this, "Marque a presença de pelo menos um aluno antes de salvar", Toast.LENGTH_LONG).show();
-            return;
-        }
+            if (adapter.getItemCount() == 0) {
+                Toast.makeText(this, "Nenhum aluno para registrar", Toast.LENGTH_SHORT).show();
+                resetarEstadoSalvamento();
+                return;
+            }
 
-        // Verificar permissão de localização
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST);
-            // Chamar novamente após permissão
-            return;
-        }
+            if (!adapter.algumAlunoMarcado()) {
+                Toast.makeText(this, "Marque a presença de pelo menos um aluno antes de salvar", Toast.LENGTH_LONG).show();
+                resetarEstadoSalvamento();
+                return;
+            }
 
-        // Obter localização
-        obterLocalizacao();
+            // Verificar permissão de localização
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        LOCATION_PERMISSION_REQUEST);
+                resetarEstadoSalvamento();
+                return;
+            }
 
-        String data = etData.getText().toString();
-        String horario = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+            // Obter localização
+            obterLocalizacao();
 
-        Map<Long, Boolean> presencas = adapter.getPresencas();
-        Map<Long, String> justificativas = adapter.getJustificativas();
+            String data = etData.getText().toString();
+            String horario = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
-        if (isEdicao && chamadaExistente != null) {
-            // Atualizar chamada existente
-            chamadaExistente.setHorarioRegistro(horario);
-            chamadaExistente.setLatitude(latitude);
-            chamadaExistente.setLongitude(longitude);
+            Map<Long, Boolean> presencas = adapter.getPresencas();
+            Map<Long, String> justificativas = adapter.getJustificativas();
 
-            repository.updateChamada(chamadaExistente, () -> {
-                // Atualizar presenças
-                for (Aluno aluno : alunos) {
-                    Boolean presente = presencas.get(aluno.getId());
-                    if (presente != null) {
-                        String justificativa = justificativas.get(aluno.getId());
-                        repository.updatePresencaByChamadaAndAluno(chamadaExistente.getId(), aluno.getId(), presente, justificativa, null);
+            if (isEdicao && chamadaExistente != null) {
+                // Atualizar chamada existente
+                chamadaExistente.setHorarioRegistro(horario);
+                chamadaExistente.setLatitude(latitude);
+                chamadaExistente.setLongitude(longitude);
+
+                repository.updateChamada(chamadaExistente, () -> {
+                    // Atualizar presenças
+                    for (Aluno aluno : alunos) {
+                        Boolean presente = presencas.get(aluno.getId());
+                        if (presente != null) {
+                            String justificativa = justificativas.get(aluno.getId());
+                            repository.updatePresencaByChamadaAndAluno(chamadaExistente.getId(), aluno.getId(), presente, justificativa, null);
+                        }
                     }
-                }
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Chamada atualizada com sucesso!", Toast.LENGTH_SHORT).show();
-                    finish();
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Chamada atualizada com sucesso!", Toast.LENGTH_SHORT).show();
+                        resetarEstadoSalvamento();
+                        finish();
+                    });
                 });
-            });
-        } else {
-            // Criar nova chamada
-            Chamada novaChamada = new Chamada(turmaSelecionadaId, data, horario, latitude, longitude, "manual");
-            repository.insertChamada(novaChamada, chamadaId -> {
-                // Salvar presenças
-                for (Aluno aluno : alunos) {
-                    Boolean presente = presencas.get(aluno.getId());
-                    if (presente != null) {
-                        String justificativa = justificativas.get(aluno.getId());
-                        Presenca presenca = new Presenca(chamadaId, aluno.getId(), presente, justificativa != null ? justificativa : "");
-                        repository.insertPresenca(presenca, null);
+            } else {
+                // Criar nova chamada
+                Chamada novaChamada = new Chamada(turmaSelecionadaId, data, horario, latitude, longitude, "manual");
+                repository.insertChamada(novaChamada, chamadaId -> {
+                    // Salvar presenças
+                    for (Aluno aluno : alunos) {
+                        Boolean presente = presencas.get(aluno.getId());
+                        if (presente != null) {
+                            String justificativa = justificativas.get(aluno.getId());
+                            Presenca presenca = new Presenca(chamadaId, aluno.getId(), presente, justificativa != null ? justificativa : "");
+                            repository.insertPresenca(presenca, null);
+                        }
                     }
-                }
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Chamada salva com sucesso!", Toast.LENGTH_SHORT).show();
-                    finish();
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Chamada salva com sucesso!", Toast.LENGTH_SHORT).show();
+                        resetarEstadoSalvamento();
+                        finish();
+                    });
                 });
-            });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resetarEstadoSalvamento();
+            Toast.makeText(this, "Erro ao salvar chamada: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    // ==================== MÉTODO AUXILIAR PARA RESETAR ESTADO ====================
+    private void resetarEstadoSalvamento() {
+        salvando = false;
+        btnSalvar.setEnabled(true);
+        btnEditar.setEnabled(true);
     }
 
     private void obterLocalizacao() {
@@ -405,5 +446,23 @@ public class ChamadaActivity extends AppCompatActivity {
         adapter.carregarDadosExistentes(presencas, adapter.getJustificativas());
 
         Toast.makeText(this, "❌ Todos os alunos desmarcados!", Toast.LENGTH_SHORT).show();
+    }
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Salvar ID da turma selecionada
+        outState.putLong(KEY_TURMA_ID, turmaSelecionadaId);
+        // Salvar estado das presenças (converter Map para arrays)
+        Map<Long, Boolean> presencas = adapter.getPresencas();
+        long[] ids = new long[presencas.size()];
+        boolean[] valores = new boolean[presencas.size()];
+        int i = 0;
+        for (Map.Entry<Long, Boolean> entry : presencas.entrySet()) {
+            ids[i] = entry.getKey();
+            valores[i] = entry.getValue();
+            i++;
+        }
+        outState.putLongArray("presenca_ids", ids);
+        outState.putBooleanArray("presenca_valores", valores);
     }
 }
