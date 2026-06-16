@@ -25,7 +25,9 @@ import com.professor.frequenciaescolar.ui.graficos.GraficosFrequenciaActivity;
 import com.professor.frequenciaescolar.ui.importar.ImportarAlunosActivity;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AlunoListActivity extends AppCompatActivity {
 
@@ -38,7 +40,7 @@ public class AlunoListActivity extends AppCompatActivity {
 
     private long turmaId;
     private String turmaNome;
-    private List<Aluno> alunos = new ArrayList<>();
+    private Map<Long, Aluno> alunosMap = new HashMap<>();  // Usar Map para evitar duplicação
     private List<Aluno> alunosFiltrados = new ArrayList<>();
 
     @Override
@@ -121,7 +123,6 @@ public class AlunoListActivity extends AppCompatActivity {
     }
 
     // ==================== CARREGAR ALUNOS ====================
-    // ==================== CARREGAR ALUNOS ====================
     private void carregarAlunos() {
         repository.getAlunosMatriculadosNaTurma(turmaId, matriculas -> {
             runOnUiThread(() -> {
@@ -131,13 +132,14 @@ public class AlunoListActivity extends AppCompatActivity {
                         tvEmpty.setVisibility(View.VISIBLE);
                         tvEmpty.setText("Nenhum aluno matriculado nesta turma.\nClique no + para adicionar");
                         adapter.setAlunos(new ArrayList<>());
-                        alunos.clear();
+                        alunosMap.clear();
                         return;
                     }
 
-                    alunos.clear();
+                    // Limpar o mapa antes de carregar
+                    alunosMap.clear();
 
-                    // Usar um contador para saber quando todos os alunos foram carregados
+                    // Contador para saber quando todos os alunos foram carregados
                     final int[] totalAlunos = {matriculas.size()};
                     final int[] carregados = {0};
 
@@ -145,14 +147,26 @@ public class AlunoListActivity extends AppCompatActivity {
                         repository.getAlunoById(m.getAlunoId(), aluno -> {
                             runOnUiThread(() -> {
                                 if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                                    alunos.add(aluno);
+                                    // Usar Map para evitar duplicação (mesmo ID substitui)
+                                    alunosMap.put(aluno.getId(), aluno);
                                 }
                                 carregados[0]++;
 
-                                // Só atualizar quando todos os alunos forem carregados
+                                // Só atualizar quando TODOS os alunos forem carregados
                                 if (carregados[0] == totalAlunos[0]) {
-                                    String textoBusca = etBusca != null ? etBusca.getText().toString() : "";
-                                    filtrarAlunos(textoBusca);
+                                    // Converter Map para List
+                                    List<Aluno> alunosList = new ArrayList<>(alunosMap.values());
+
+                                    if (alunosList.isEmpty()) {
+                                        rvAlunos.setVisibility(View.GONE);
+                                        tvEmpty.setVisibility(View.VISIBLE);
+                                        tvEmpty.setText("Nenhum aluno ativo nesta turma");
+                                        adapter.setAlunos(new ArrayList<>());
+                                    } else {
+                                        // Atualizar a lista filtrada
+                                        String textoBusca = etBusca != null ? etBusca.getText().toString() : "";
+                                        filtrarAlunos(textoBusca);
+                                    }
                                 }
                             });
                         });
@@ -173,13 +187,15 @@ public class AlunoListActivity extends AppCompatActivity {
 
     // ==================== FILTRAR ALUNOS ====================
     private void filtrarAlunos(String texto) {
+        // Converter Map para List para filtragem
+        List<Aluno> alunosList = new ArrayList<>(alunosMap.values());
         alunosFiltrados.clear();
 
         if (texto.isEmpty()) {
-            alunosFiltrados.addAll(alunos);
+            alunosFiltrados.addAll(alunosList);
         } else {
             String busca = texto.toLowerCase().trim();
-            for (Aluno aluno : alunos) {
+            for (Aluno aluno : alunosList) {
                 if (aluno != null) {
                     String nome = aluno.getNome() != null ? aluno.getNome().toLowerCase() : "";
                     String matricula = aluno.getMatricula() != null ? aluno.getMatricula().toLowerCase() : "";
