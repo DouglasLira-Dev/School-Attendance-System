@@ -77,6 +77,20 @@
 
             </LinearLayout>
 
+            <!-- Filtro por Status do Aluno -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Status do Aluno">
+
+                <Spinner
+                    android:id="@+id/spinnerStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
             <!-- Botão Gerar Relatório -->
             <Button
                 android:id="@+id/btnGerarRelatorio"
