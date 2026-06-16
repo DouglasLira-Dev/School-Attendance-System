@@ -29,24 +29,30 @@ public class AlunoAdapter extends RecyclerView.Adapter<AlunoAdapter.AlunoViewHol
 
     @Override
     public void onBindViewHolder(@NonNull AlunoViewHolder holder, int position) {
-        Aluno aluno = alunos.get(position);
-        holder.tvNome.setText(aluno.getNome());
-        holder.tvMatricula.setText("Matrícula: " + aluno.getMatricula());
-        holder.tvStatus.setText("Status: " + aluno.getStatus());
-        holder.tvResponsavel.setText("Responsável: " + aluno.getResponsavel());
+        try {
+            Aluno aluno = alunos.get(position);
+            if (aluno == null) return;
 
-        // Mudar cor do status
-        if ("ativo".equals(aluno.getStatus())) {
-            holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_green_dark));
-        } else {
-            holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_red_dark));
-        }
+            holder.tvNome.setText(aluno.getNome() != null ? aluno.getNome() : "Sem nome");
+            holder.tvMatricula.setText("Matrícula: " + (aluno.getMatricula() != null ? aluno.getMatricula() : "-"));
+            holder.tvStatus.setText("Status: " + (aluno.getStatus() != null ? aluno.getStatus() : "desconhecido"));
+            holder.tvResponsavel.setText("Responsável: " + (aluno.getResponsavel() != null ? aluno.getResponsavel() : "-"));
 
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onItemClick(aluno);
+            // Mudar cor do status
+            if ("ativo".equals(aluno.getStatus())) {
+                holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_green_dark));
+            } else {
+                holder.tvStatus.setTextColor(holder.itemView.getContext().getColor(android.R.color.holo_red_dark));
             }
-        });
+
+            holder.itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemClick(aluno);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

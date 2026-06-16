@@ -128,6 +128,11 @@
             android:name=".ui.risco.AlunosRiscoActivity"
             android:exported="false" />
 
+        <!-- Tela para Gerênciar Feriados -->
+        <activity
+            android:name=".ui.feriados.GerenciarFeriadosActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

@@ -2,6 +2,7 @@ package com.professor.frequenciaescolar.ui.configuracoes;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -13,6 +14,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.professor.frequenciaescolar.R;
+import com.professor.frequenciaescolar.ui.feriados.GerenciarFeriadosActivity;
 import com.professor.frequenciaescolar.utils.ConfiguracoesManager;
 
 import java.text.SimpleDateFormat;
@@ -61,10 +63,13 @@ public class ConfiguracoesActivity extends AppCompatActivity {
         configurarDatePickers();
         configurarTimePicker();
 
-        btnSalvar.setOnClickListener(v -> salvarConfiguracoes());
+        Button btnFeriados = findViewById(R.id.btnFeriados);
         btnFeriados.setOnClickListener(v -> {
-            Toast.makeText(this, "Gerenciar Feriados - Em breve", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(ConfiguracoesActivity.this, GerenciarFeriadosActivity.class);
+            startActivity(intent);
         });
+
+        btnSalvar.setOnClickListener(v -> salvarConfiguracoes());
     }
 
     private void carregarConfiguracoes() {
