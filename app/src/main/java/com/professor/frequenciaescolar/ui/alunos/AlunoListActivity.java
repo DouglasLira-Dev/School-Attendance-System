@@ -121,6 +121,7 @@ public class AlunoListActivity extends AppCompatActivity {
     }
 
     // ==================== CARREGAR ALUNOS ====================
+    // ==================== CARREGAR ALUNOS ====================
     private void carregarAlunos() {
         repository.getAlunosMatriculadosNaTurma(turmaId, matriculas -> {
             runOnUiThread(() -> {
@@ -136,17 +137,30 @@ public class AlunoListActivity extends AppCompatActivity {
 
                     alunos.clear();
 
+                    // Usar um contador para saber quando todos os alunos foram carregados
+                    final int[] totalAlunos = {matriculas.size()};
+                    final int[] carregados = {0};
+
                     for (Matricula m : matriculas) {
                         repository.getAlunoById(m.getAlunoId(), aluno -> {
                             runOnUiThread(() -> {
                                 if (aluno != null && "ativo".equals(aluno.getStatus())) {
                                     alunos.add(aluno);
-                                    // Atualizar lista filtrada
+                                }
+                                carregados[0]++;
+
+                                // Só atualizar quando todos os alunos forem carregados
+                                if (carregados[0] == totalAlunos[0]) {
                                     String textoBusca = etBusca != null ? etBusca.getText().toString() : "";
                                     filtrarAlunos(textoBusca);
                                 }
                             });
                         });
+                    }
+
+                    // Se não houver alunos para carregar (fallback)
+                    if (totalAlunos[0] == 0) {
+                        adapter.setAlunos(new ArrayList<>());
                     }
 
                 } catch (Exception e) {

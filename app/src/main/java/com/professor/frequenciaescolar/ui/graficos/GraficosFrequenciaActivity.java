@@ -217,6 +217,40 @@ public class GraficosFrequenciaActivity extends AppCompatActivity {
                     }
                 }
         ).attach();
+        viewPager.setCurrentItem(0, false);
+
+        // Atualizar os gráficos quando a aba for selecionada
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                // Recarregar dados ao trocar de aba
+                if (position == 0) {
+                    // Atualizar gráfico de barras
+                    atualizarGraficoBarras();
+                } else {
+                    // Atualizar gráfico de linha
+                    atualizarGraficoLinha();
+                }
+            }
+        });
+    }
+    private void atualizarGraficoBarras() {
+        // Recarregar dados do gráfico de barras
+        if (viewPager.getAdapter() != null) {
+            Fragment fragment = getSupportFragmentManager().findFragmentByTag("f0");
+            if (fragment instanceof BarChartFragment) {
+                ((BarChartFragment) fragment).atualizarDados(meses, valoresTurma, mediaTurma);
+            }
+        }
+    }
+    private void atualizarGraficoLinha() {
+        if (viewPager.getAdapter() != null) {
+            Fragment fragment = getSupportFragmentManager().findFragmentByTag("f1");
+            if (fragment instanceof LineChartFragment) {
+                ((LineChartFragment) fragment).atualizarDados(meses, valoresAluno, alunoNome);
+            }
+        }
     }
 
     private String getNomeMes(int mes) {
