@@ -10,6 +10,7 @@
 ![Room](https://img.shields.io/badge/Room-SQLite-lightblue?style=flat-square)
 ![License](https://img.shields.io/badge/licença-MIT-yellow?style=flat-square)
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-success?style=flat-square)
+![Build Status](https://github.com/DouglasLira-Dev/School-Attendance-System/actions/workflows/build.yml/badge.svg)
 
 </div>
 
