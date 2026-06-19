@@ -8,9 +8,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.biometric.BiometricPrompt;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
 
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.ui.turmas.TurmaListActivity;
@@ -25,11 +26,11 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnEntrar;
     private Button btnBiometria;
     private TextView tvMensagem;
+    private TextView tvEsqueciSenha;
 
     private SenhaManager senhaManager;
     private BiometricPrompt biometricPrompt;
     private BiometricPrompt.PromptInfo promptInfo;
-    private TextView tvEsqueciSenha;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +41,7 @@ public class LoginActivity extends AppCompatActivity {
         btnEntrar = findViewById(R.id.btnEntrar);
         btnBiometria = findViewById(R.id.btnBiometria);
         tvMensagem = findViewById(R.id.tvMensagem);
+        tvEsqueciSenha = findViewById(R.id.tvEsqueciSenha);
 
         senhaManager = new SenhaManager(this);
 
@@ -56,7 +58,7 @@ public class LoginActivity extends AppCompatActivity {
         // Verificar se biometria está disponível
         verificarDisponibilidadeBiometria();
 
-        tvEsqueciSenha = findViewById(R.id.tvEsqueciSenha);
+        // Clique do "Esqueci minha senha"
         tvEsqueciSenha.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, EsqueciSenhaActivity.class);
             startActivity(intent);
@@ -73,7 +75,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 runOnUiThread(() -> {
-                    Toast.makeText(LoginActivity.this, "Autenticado com sucesso!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "✅ Autenticado com sucesso!", Toast.LENGTH_SHORT).show();
                     abrirTurmas();
                 });
             }
@@ -81,8 +83,19 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onAuthenticationFailed() {
                 runOnUiThread(() -> {
-                    tvMensagem.setText("Falha na autenticação. Tente novamente.");
+                    tvMensagem.setText("❌ Falha na autenticação. Tente novamente.");
                     tvMensagem.setVisibility(android.view.View.VISIBLE);
+                });
+            }
+
+            // ==================== ADICIONADO: Tratamento de erros ====================
+            @Override
+            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                runOnUiThread(() -> {
+                    String mensagem = "❌ Erro: " + errString;
+                    tvMensagem.setText(mensagem);
+                    tvMensagem.setVisibility(android.view.View.VISIBLE);
+                    Toast.makeText(LoginActivity.this, mensagem, Toast.LENGTH_LONG).show();
                 });
             }
         });
@@ -96,12 +109,36 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void verificarDisponibilidadeBiometria() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Verificar se o dispositivo suporta biometria
+        // ==================== VERIFICAÇÃO COMPLETA ====================
+        BiometricManager biometricManager = BiometricManager.from(this);
+        int canAuthenticate = biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG |
+                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        );
+
+        if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
             btnBiometria.setEnabled(true);
+            btnBiometria.setText("Usar Impressão Digital");
         } else {
             btnBiometria.setEnabled(false);
-            btnBiometria.setText("Biometria não suportada");
+            btnBiometria.setText("Biometria não disponível");
+            // Opcional: mostrar motivo
+            String motivo;
+            switch (canAuthenticate) {
+                case BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE:
+                    motivo = "Dispositivo não suporta biometria";
+                    break;
+                case BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE:
+                    motivo = "Hardware de biometria indisponível";
+                    break;
+                case BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED:
+                    motivo = "Nenhuma impressão digital cadastrada";
+                    break;
+                default:
+                    motivo = "Biometria não disponível";
+            }
+            tvMensagem.setText("ℹ️ " + motivo);
+            tvMensagem.setVisibility(android.view.View.VISIBLE);
         }
     }
 
@@ -122,6 +159,25 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void autenticarBiometria() {
+        // ==================== VERIFICAÇÃO DE NULL ====================
+        if (biometricPrompt == null || promptInfo == null) {
+            Toast.makeText(this, "Biometria não inicializada", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Verifica novamente se o dispositivo suporta
+        BiometricManager biometricManager = BiometricManager.from(this);
+        int canAuthenticate = biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG |
+                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        );
+
+        if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
+            Toast.makeText(this, "Biometria não disponível no momento", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Inicia a autenticação
         biometricPrompt.authenticate(promptInfo);
     }
 
@@ -130,5 +186,11 @@ public class LoginActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        tvMensagem.setVisibility(android.view.View.GONE);
     }
 }
