@@ -134,30 +134,34 @@ public class AlunoListActivity extends AppCompatActivity {
                     tvEmpty.setVisibility(View.VISIBLE);
                     tvEmpty.setText("Nenhum aluno matriculado nesta turma.\nClique no + para adicionar");
                     adapter.setAlunos(new ArrayList<>());
+                    alunosMap.clear();
                 });
                 return;
             }
 
-            // MELHORIA: coletar todos os alunos primeiro, depois atualizar a UI uma única vez
-            List<Aluno> alunosCarregados = new ArrayList<>();
+            alunosMap.clear();
             AtomicInteger contador = new AtomicInteger(0);
             int total = matriculas.size();
 
             for (Matricula m : matriculas) {
                 repository.getAlunoById(m.getAlunoId(), aluno -> {
-                    if (aluno != null && "ativo".equals(aluno.getStatus())) {
-                        synchronized (alunosCarregados) {
-                            alunosCarregados.add(aluno);
+                    runOnUiThread(() -> {
+                        if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                            alunosMap.put(aluno.getId(), aluno);
                         }
-                    }
-                    // Só atualiza a UI quando TODOS os callbacks chegaram
-                    if (contador.incrementAndGet() == total) {
-                        runOnUiThread(() -> {
-                            alunos.clear();
-                            alunos.addAll(alunosCarregados);
-                            filtrarAlunos(etBusca.getText().toString());
-                        });
-                    }
+                        if (contador.incrementAndGet() == total) {
+                            List<Aluno> alunosList = new ArrayList<>(alunosMap.values());
+                            if (alunosList.isEmpty()) {
+                                rvAlunos.setVisibility(View.GONE);
+                                tvEmpty.setVisibility(View.VISIBLE);
+                                tvEmpty.setText("Nenhum aluno ativo nesta turma");
+                                adapter.setAlunos(new ArrayList<>());
+                            } else {
+                                String textoBusca = etBusca != null ? etBusca.getText().toString() : "";
+                                filtrarAlunos(textoBusca);
+                            }
+                        }
+                    });
                 });
             }
         });

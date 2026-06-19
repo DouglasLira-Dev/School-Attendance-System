@@ -14,7 +14,7 @@ import java.util.List;
 public interface AlunoDao {
 
     @Insert
-    void insert(Aluno aluno);
+    long insert(Aluno aluno);  // Deve retornar long, não void
 
     @Update
     void update(Aluno aluno);

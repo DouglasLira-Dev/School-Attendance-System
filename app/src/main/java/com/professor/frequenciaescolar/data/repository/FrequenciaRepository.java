@@ -308,6 +308,22 @@ public class FrequenciaRepository {
             if (callback != null) callback.onDataFetched(feriados);
         }, erro -> android.util.Log.e("Repository", "Erro ao buscar feriados no período: " + erro));
     }
+    // ==================== INSERIR ALUNO E RETORNAR ID ====================
+    public void insertAlunoAndGetId(Aluno aluno, OnDataFetched<Long> callback) {
+        executorService.execute(() -> {
+            try {
+                long id = database.alunoDao().insert(aluno);
+                if (callback != null) {
+                    callback.onDataFetched(id);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("Repository", "Erro ao inserir aluno", e);
+                if (callback != null) {
+                    callback.onDataFetched(-1L);
+                }
+            }
+        });
+    }
     // ==================== CALLBACK INTERFACE ====================
     public interface OnDataFetched<T> {
         void onDataFetched(T data);
