@@ -10,3 +10,11 @@
 .cxx/
 *.hprof
 *.log
+*.jks
+*.keystore
+app/keystore.jks
+app/release/
+*.apk
+*.aab
+baselineProfiles/
+output-metadata.json

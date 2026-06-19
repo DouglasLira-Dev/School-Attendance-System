@@ -20,6 +20,15 @@
 O **Frequência Escolar** é um aplicativo Android desenvolvido para professores registrarem e acompanharem a frequência dos alunos de forma simples, rápida e completamente offline. Com suporte a múltiplas turmas, relatórios detalhados, gráficos e exportação de dados, ele centraliza toda a gestão de presença escolar em um único lugar.
 
 ---
+## 📱 Capturas de Tela
+
+| Login | Lista de Turmas | Chamada |
+|-------|-----------------|---------|
+| ![Login](screenshots/login.png) | ![Turmas](screenshots/turmas_list.png) | ![Chamada](screenshots/chamada.png) |
+
+| Relatórios | Gráficos | Alunos em Risco |
+|------------|----------|-----------------|
+| ![Relatório](screenshots/relatorio.png) | ![Gráficos](screenshots/graficos.png) | ![Risco](screenshots/alunos_risco.png) |
 
 ## 🛠️ Tecnologias
 
