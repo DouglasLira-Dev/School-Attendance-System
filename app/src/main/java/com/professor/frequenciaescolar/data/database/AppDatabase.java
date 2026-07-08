@@ -25,7 +25,7 @@ import com.professor.frequenciaescolar.data.entities.Turma;
                 Feriado.class
         },
         version = 2,
-        exportSchema = false
+        exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
 

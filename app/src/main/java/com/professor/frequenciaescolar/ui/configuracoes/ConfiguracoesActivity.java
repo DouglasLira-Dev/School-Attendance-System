@@ -2,12 +2,16 @@ package com.professor.frequenciaescolar.ui.configuracoes;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.app.AlarmManager;
 import android.content.Intent;
+import android.os.Build;
+import android.provider.Settings;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Toast;
+
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -26,7 +30,7 @@ public class ConfiguracoesActivity extends AppCompatActivity {
     private CheckBox[] chkDias = new CheckBox[7];
     private TextInputEditText etDataInicio, etDataFim, etHorarioLembrete;
     private CheckBox chkDesconsiderarJustificadas;
-    private Button btnSalvar, btnFeriados;
+    private Button btnSalvar, btnFeriados, btnPermissaoAlarme;
 
     private ConfiguracoesManager configManager;
 
@@ -57,6 +61,7 @@ public class ConfiguracoesActivity extends AppCompatActivity {
         btnSalvar = findViewById(R.id.btnSalvar);
         btnFeriados = findViewById(R.id.btnFeriados);
 
+
         configManager = new ConfiguracoesManager(this);
 
         carregarConfiguracoes();
@@ -67,6 +72,16 @@ public class ConfiguracoesActivity extends AppCompatActivity {
         btnFeriados.setOnClickListener(v -> {
             Intent intent = new Intent(ConfiguracoesActivity.this, GerenciarFeriadosActivity.class);
             startActivity(intent);
+        });
+
+        Button btnPermissaoAlarme = findViewById(R.id.btnPermissaoAlarme);
+        btnPermissaoAlarme.setOnClickListener(v -> {
+            AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) {
+                startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM));
+            } else {
+                Toast.makeText(this, "Permissão já concedida", Toast.LENGTH_SHORT).show();
+            }
         });
 
         btnSalvar.setOnClickListener(v -> salvarConfiguracoes());
