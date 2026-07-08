@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.common.collect.Table;
 import com.professor.frequenciaescolar.R;
 import com.professor.frequenciaescolar.data.entities.Aluno;
 import com.professor.frequenciaescolar.data.entities.Chamada;
@@ -47,18 +48,18 @@ import com.professor.frequenciaescolar.utils.ConfiguracoesManager;
 import com.professor.frequenciaescolar.utils.NotificationHelper;
 import com.professor.frequenciaescolar.utils.NotificationScheduler;
 import com.professor.frequenciaescolar.data.database.AppDatabase;
-import com.itextpdf.kernel.colors.ColorConstants;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.properties.UnitValue;
+
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.pdmodel.PDPage;
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream;
+import com.tom_roush.pdfbox.pdmodel.common.PDRectangle;
+import com.tom_roush.pdfbox.pdmodel.font.PDFont;
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.wp.usermodel.Paragraph;
+import org.apache.poi.xddf.usermodel.text.TextAlignment;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -84,6 +85,13 @@ public class TurmaListActivity extends AppCompatActivity {
     private AlunoAdapter alunoAdapter;
     private boolean carregouPelaVez = false;
     private AppDatabase database;
+    private static boolean pdfBoxInicializado = false;
+
+    private static final float MARGEM = 50f;
+    private static final float TAM_FONTE_TITULO = 16f;
+    private static final float TAM_FONTE_INFO = 10f;
+    private static final float TAM_FONTE_TABELA = 9f;
+    private static final float ALTURA_LINHA = 20f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,10 +101,12 @@ public class TurmaListActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         swipeRefresh = findViewById(R.id.swipeRefresh);
-        swipeRefresh.setOnRefreshListener(() -> {
-            carregarTurmas();
-            swipeRefresh.setRefreshing(false);
-        });
+        if (swipeRefresh != null) {
+            swipeRefresh.setOnRefreshListener(() -> {
+                carregarTurmas();
+                swipeRefresh.setRefreshing(false);
+                    });
+        }
 
         rvTurmas = findViewById(R.id.rvTurmas);
         tvEmpty = findViewById(R.id.tvEmpty);
@@ -392,8 +402,15 @@ public class TurmaListActivity extends AppCompatActivity {
         }).start();
     }
 
-    // ==================== GERAR PDF ====================
+    // ==================== GERAR PDF (via pdfbox-android) ====================
+
     private void gerarPDFTurma(Turma turma, List<AlunoExport> alunos, int totalDias, String dataInicio, String dataFim) {
+        if (!pdfBoxInicializado) {
+            PDFBoxResourceLoader.init(getApplicationContext());
+            pdfBoxInicializado = true;
+        }
+
+        PDDocument document = new PDDocument();
         try {
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String fileName = "relatorio_turma_" + turma.getNome().replace(" ", "_") + "_" + timestamp + ".pdf";
@@ -402,75 +419,89 @@ public class TurmaListActivity extends AppCompatActivity {
             if (!downloadsDir.exists()) {
                 downloadsDir.mkdirs();
             }
-
             File pdfFile = new File(downloadsDir, fileName);
-            PdfWriter writer = new PdfWriter(new FileOutputStream(pdfFile));
-            PdfDocument pdfDoc = new PdfDocument(writer);
-            Document document = new Document(pdfDoc, PageSize.A4);
-            document.setMargins(50, 50, 50, 50);
 
-            PdfFont boldFont = PdfFontFactory.createFont();
-            Paragraph titulo = new Paragraph("RELATÓRIO DE FREQUÊNCIA - TURMA")
-                    .setFont(boldFont)
-                    .setFontSize(18)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginBottom(20);
-            document.add(titulo);
+            PDFont fonteNormal = PDType1Font.HELVETICA;
+            PDFont fonteNegrito = PDType1Font.HELVETICA_BOLD;
 
-            Table infoTable = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
-            infoTable.setWidth(UnitValue.createPercentValue(100));
-            infoTable.setMarginBottom(20);
+            // Larguras das colunas (Nº, Nome, Matrícula, Presenças, Faltas, Frequência)
+            float larguraUtil = PDRectangle.A4.getWidth() - (MARGEM * 2);
+            float[] proporcoes = {0.05f, 0.30f, 0.20f, 0.15f, 0.15f, 0.15f};
+            float[] largurasColunas = new float[proporcoes.length];
+            for (int i = 0; i < proporcoes.length; i++) {
+                largurasColunas[i] = larguraUtil * proporcoes[i];
+            }
+            String[] cabecalhos = {"Nº", "Nome", "Matrícula", "Presenças", "Faltas", "Frequência"};
 
-            adicionarLinhaTabela(infoTable, "Turma:", turma.getNome() + " - " + turma.getTurno());
-            adicionarLinhaTabela(infoTable, "Período:", dataInicio + " a " + dataFim);
-            adicionarLinhaTabela(infoTable, "Total de Dias Letivos:", String.valueOf(totalDias));
-            adicionarLinhaTabela(infoTable, "Total de Alunos:", String.valueOf(alunos.size()));
-            adicionarLinhaTabela(infoTable, "Data de Geração:", new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
+            PDPage paginaAtual = new PDPage(PDRectangle.A4);
+            document.addPage(paginaAtual);
+            PDPageContentStream cs = new PDPageContentStream(document, paginaAtual);
 
-            document.add(infoTable);
+            float y = PDRectangle.A4.getHeight() - MARGEM;
 
-            Paragraph tabelaTitle = new Paragraph("LISTA DE ALUNOS")
-                    .setFont(boldFont)
-                    .setFontSize(14)
-                    .setMarginTop(10)
-                    .setMarginBottom(10);
-            document.add(tabelaTitle);
+            // ---------- Título ----------
+            y = desenharTextoCentralizado(cs, "RELATÓRIO DE FREQUÊNCIA - TURMA", fonteNegrito, TAM_FONTE_TITULO, y, PDRectangle.A4.getWidth());
+            y -= 20;
 
-            Table alunoTable = new Table(UnitValue.createPercentArray(new float[]{5, 30, 20, 15, 15, 15}));
-            alunoTable.setWidth(UnitValue.createPercentValue(100));
-            alunoTable.setMarginBottom(20);
+            // ---------- Bloco de informações ----------
+            y = desenharLinhaInfo(cs, fonteNegrito, fonteNormal, "Turma:", turma.getNome() + " - " + turma.getTurno(), y);
+            y = desenharLinhaInfo(cs, fonteNegrito, fonteNormal, "Período:", dataInicio + " a " + dataFim, y);
+            y = desenharLinhaInfo(cs, fonteNegrito, fonteNormal, "Total de Dias Letivos:", String.valueOf(totalDias), y);
+            y = desenharLinhaInfo(cs, fonteNegrito, fonteNormal, "Total de Alunos:", String.valueOf(alunos.size()), y);
+            y = desenharLinhaInfo(cs, fonteNegrito, fonteNormal, "Data de Geração:",
+                    new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()), y);
+            y -= 15;
 
-            adicionarCelulaCabecalho(alunoTable, "Nº");
-            adicionarCelulaCabecalho(alunoTable, "Nome");
-            adicionarCelulaCabecalho(alunoTable, "Matrícula");
-            adicionarCelulaCabecalho(alunoTable, "Presenças");
-            adicionarCelulaCabecalho(alunoTable, "Faltas");
-            adicionarCelulaCabecalho(alunoTable, "Frequência");
+            // ---------- Título da tabela ----------
+            cs.beginText();
+            cs.setFont(fonteNegrito, 12);
+            cs.newLineAtOffset(MARGEM, y);
+            cs.showText("LISTA DE ALUNOS");
+            cs.endText();
+            y -= ALTURA_LINHA;
 
+            // ---------- Cabeçalho da tabela ----------
+            y = desenharCabecalhoTabela(cs, cabecalhos, largurasColunas, fonteNegrito, y);
+
+            // ---------- Linhas da tabela (com paginação) ----------
             int count = 1;
             for (AlunoExport ae : alunos) {
-                alunoTable.addCell(new Cell().add(new Paragraph(String.valueOf(count++))));
-                alunoTable.addCell(new Cell().add(new Paragraph(ae.nome)));
-                alunoTable.addCell(new Cell().add(new Paragraph(ae.matricula)));
-                alunoTable.addCell(new Cell().add(new Paragraph(String.valueOf(ae.presencas))));
-                alunoTable.addCell(new Cell().add(new Paragraph(String.valueOf(ae.faltas))));
-                Cell freqCell = new Cell().add(new Paragraph(String.format("%.1f%%", ae.frequencia)));
-                if (ae.frequencia < 75) {
-                    freqCell.setBackgroundColor(ColorConstants.RED);
-                    freqCell.setFontColor(ColorConstants.WHITE);
+                if (y - ALTURA_LINHA < MARGEM) {
+                    // Fecha página atual e abre uma nova
+                    cs.close();
+                    paginaAtual = new PDPage(PDRectangle.A4);
+                    document.addPage(paginaAtual);
+                    cs = new PDPageContentStream(document, paginaAtual);
+                    y = PDRectangle.A4.getHeight() - MARGEM;
+                    y = desenharCabecalhoTabela(cs, cabecalhos, largurasColunas, fonteNegrito, y);
                 }
-                alunoTable.addCell(freqCell);
+
+                String[] valores = {
+                        String.valueOf(count++),
+                        ae.nome,
+                        ae.matricula,
+                        String.valueOf(ae.presencas),
+                        String.valueOf(ae.faltas),
+                        String.format(Locale.getDefault(), "%.1f%%", ae.frequencia)
+                };
+
+                boolean destacar = ae.frequencia < 75;
+                y = desenharLinhaTabela(cs, valores, largurasColunas, fonteNormal, y, destacar);
             }
 
-            document.add(alunoTable);
+            // ---------- Rodapé ----------
+            if (y - 30 < MARGEM) {
+                cs.close();
+                paginaAtual = new PDPage(PDRectangle.A4);
+                document.addPage(paginaAtual);
+                cs = new PDPageContentStream(document, paginaAtual);
+                y = PDRectangle.A4.getHeight() - MARGEM;
+            }
+            y -= 20;
+            desenharTextoCentralizado(cs, "Documento gerado pelo Sistema de Frequência Escolar", fonteNormal, 8, y, PDRectangle.A4.getWidth());
 
-            Paragraph footer = new Paragraph("Documento gerado pelo Sistema de Frequência Escolar")
-                    .setFontSize(8)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginTop(30);
-            document.add(footer);
-
-            document.close();
+            cs.close();
+            document.save(pdfFile);
 
             runOnUiThread(() -> {
                 String caminho = pdfFile.getAbsolutePath();
@@ -481,7 +512,94 @@ public class TurmaListActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             runOnUiThread(() -> Toast.makeText(this, "Erro ao gerar PDF: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        } finally {
+            try {
+                document.close();
+            } catch (Exception ignored) {
+            }
         }
+    }
+
+// ---------- Helpers de desenho ----------
+
+    private float desenharTextoCentralizado(PDPageContentStream cs, String texto, PDFont fonte, float tamanho, float y, float larguraPagina) throws Exception {
+        float larguraTexto = fonte.getStringWidth(texto) / 1000 * tamanho;
+        float x = (larguraPagina - larguraTexto) / 2;
+        cs.beginText();
+        cs.setFont(fonte, tamanho);
+        cs.newLineAtOffset(x, y);
+        cs.showText(texto);
+        cs.endText();
+        return y - ALTURA_LINHA;
+    }
+
+    private float desenharLinhaInfo(PDPageContentStream cs, PDFont fonteNegrito, PDFont fonteNormal, String label, String valor, float y) throws Exception {
+        cs.beginText();
+        cs.setFont(fonteNegrito, TAM_FONTE_INFO);
+        cs.newLineAtOffset(MARGEM, y);
+        cs.showText(label);
+        cs.endText();
+
+        cs.beginText();
+        cs.setFont(fonteNormal, TAM_FONTE_INFO);
+        cs.newLineAtOffset(MARGEM + 140, y);
+        cs.showText(valor);
+        cs.endText();
+
+        return y - 16;
+    }
+
+    private float desenharCabecalhoTabela(PDPageContentStream cs, String[] cabecalhos, float[] larguras, PDFont fonteNegrito, float y) throws Exception {
+        float x = MARGEM;
+
+        // Fundo cinza claro
+        cs.setNonStrokingColor(0.85f, 0.85f, 0.85f);
+        cs.addRect(MARGEM, y - ALTURA_LINHA + 4, somar(larguras), ALTURA_LINHA);
+        cs.fill();
+        cs.setNonStrokingColor(0f, 0f, 0f);
+
+        for (int i = 0; i < cabecalhos.length; i++) {
+            cs.beginText();
+            cs.setFont(fonteNegrito, TAM_FONTE_TABELA);
+            cs.newLineAtOffset(x + 3, y - ALTURA_LINHA + 8);
+            cs.showText(cabecalhos[i]);
+            cs.endText();
+            x += larguras[i];
+        }
+
+        return y - ALTURA_LINHA;
+    }
+
+    private float desenharLinhaTabela(PDPageContentStream cs, String[] valores, float[] larguras, PDFont fonte, float y, boolean destacarFrequenciaBaixa) throws Exception {
+        float x = MARGEM;
+
+        for (int i = 0; i < valores.length; i++) {
+            // Última coluna é a de frequência; destaca em vermelho se abaixo de 75%
+            if (i == valores.length - 1 && destacarFrequenciaBaixa) {
+                cs.setNonStrokingColor(0.85f, 0f, 0f);
+                cs.addRect(x, y - ALTURA_LINHA + 4, larguras[i], ALTURA_LINHA);
+                cs.fill();
+                cs.setNonStrokingColor(1f, 1f, 1f);
+            } else {
+                cs.setNonStrokingColor(0f, 0f, 0f);
+            }
+
+            cs.beginText();
+            cs.setFont(fonte, TAM_FONTE_TABELA);
+            cs.newLineAtOffset(x + 3, y - ALTURA_LINHA + 8);
+            cs.showText(valores[i]);
+            cs.endText();
+
+            x += larguras[i];
+        }
+        cs.setNonStrokingColor(0f, 0f, 0f);
+        return y - ALTURA_LINHA;
+    }
+
+    private float somar(float[] valores) {
+        float total = 0;
+        for (float v : valores) total += v;
+        return total;
     }
 
     // ==================== GERAR CSV ====================
@@ -535,17 +653,6 @@ public class TurmaListActivity extends AppCompatActivity {
     }
 
     // ==================== MÉTODOS AUXILIARES ====================
-    private void adicionarLinhaTabela(Table table, String label, String valor) {
-        table.addCell(new Cell().add(new Paragraph(label).setBold()));
-        table.addCell(new Cell().add(new Paragraph(valor)));
-    }
-
-    private void adicionarCelulaCabecalho(Table table, String texto) {
-        Cell cell = new Cell().add(new Paragraph(texto).setBold());
-        cell.setBackgroundColor(ColorConstants.LIGHT_GRAY);
-        cell.setTextAlignment(TextAlignment.CENTER);
-        table.addCell(cell);
-    }
 
     private void compartilharArquivo(File file, String tipo) {
         Uri uri = FileProvider.getUriForFile(this,
