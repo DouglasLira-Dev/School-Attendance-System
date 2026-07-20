@@ -222,22 +222,32 @@ public class TurmaListActivity extends AppCompatActivity {
 
         // Carregar alunos da turma
         repository.getAlunosMatriculadosNaTurma(turma.getId(), matriculas -> {
-            runOnUiThread(() -> {
-                if (matriculas == null || matriculas.isEmpty()) {
-                    alunoAdapter.setAlunos(new ArrayList<>());
-                    return;
-                }
+            if (matriculas == null || matriculas.isEmpty()) {
+                runOnUiThread(() -> alunoAdapter.setAlunos(new ArrayList<>()));
+                return;
+            }
 
-                List<Aluno> alunos = new ArrayList<>();
-                for (Matricula m : matriculas) {
-                    repository.getAlunoById(m.getAlunoId(), aluno -> {
-                        if (aluno != null && "ativo".equals(aluno.getStatus())) {
+            // Usamos um contador para saber quando TODAS as buscas assíncronas
+            // terminaram, e só então atualizamos o RecyclerView (uma única vez,
+            // sempre na UI thread). Antes, cada callback de getAlunoById (que roda
+            // em background thread) chamava alunoAdapter.setAlunos() diretamente,
+            // o que travava a atualização da lista no tablet.
+            List<Aluno> alunos = new ArrayList<>();
+            java.util.concurrent.atomic.AtomicInteger restantes =
+                    new java.util.concurrent.atomic.AtomicInteger(matriculas.size());
+
+            for (Matricula m : matriculas) {
+                repository.getAlunoById(m.getAlunoId(), aluno -> {
+                    if (aluno != null && "ativo".equals(aluno.getStatus())) {
+                        synchronized (alunos) {
                             alunos.add(aluno);
-                            alunoAdapter.setAlunos(new ArrayList<>(alunos));
                         }
-                    });
-                }
-            });
+                    }
+                    if (restantes.decrementAndGet() == 0) {
+                        runOnUiThread(() -> alunoAdapter.setAlunos(new ArrayList<>(alunos)));
+                    }
+                });
+            }
         });
     }
 

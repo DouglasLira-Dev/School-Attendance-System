@@ -144,6 +144,7 @@ public class ImportarAlunosActivity extends AppCompatActivity {
             previewAdapter = new PreviewAdapter(previewList);
             rvPreview.setLayoutManager(new LinearLayoutManager(this));
             rvPreview.setAdapter(previewAdapter);
+            previewAdapter.setOnRemoveClickListener(this::confirmarRemocaoDoPreview);
 
             // Carregar turmas no Spinner
             carregarTurmasSpinner();
@@ -354,6 +355,30 @@ public class ImportarAlunosActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Erro ao processar arquivo: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void confirmarRemocaoDoPreview(int position) {
+        if (position < 0 || position >= previewList.size()) return;
+
+        AlunoPreview preview = previewList.get(position);
+        new AlertDialog.Builder(this)
+                .setTitle("Remover aluno")
+                .setMessage("Remover \"" + preview.nome + "\" desta importação?\n\nEle não será importado, mas o arquivo original não é alterado.")
+                .setPositiveButton("Remover", (dialog, which) -> {
+                    previewList.remove(position);
+                    previewAdapter.notifyItemRemoved(position);
+                    previewAdapter.notifyItemRangeChanged(position, previewList.size());
+                    atualizarResumoPreview();
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void atualizarResumoPreview() {
+        tvResumo.setText(String.format("Total de alunos encontrados: %d", previewList.size()));
+        cardPreview.setVisibility(previewList.isEmpty() ? View.GONE : View.VISIBLE);
+        btnImportar.setVisibility(previewList.isEmpty() ? View.GONE : View.VISIBLE);
+        btnImportar.setEnabled(!previewList.isEmpty());
     }
 
     private String detectarSeparador(BufferedReader reader) throws IOException {
